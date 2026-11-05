@@ -8,6 +8,7 @@ import type { Movie } from '../types/movie'
 type DashboardPageProps = {
   movies: Movie[]
   visibleMovies: Movie[]
+  firstName: string
   watchlistCount: number
   watchedCount: number
   isLoading: boolean
@@ -47,7 +48,7 @@ function createFeaturedSlides(movies: Movie[]): FeatureSlide[] {
   ]
 }
 
-export function DashboardPage({ movies, visibleMovies, watchlistCount, watchedCount, isLoading, error, onToggleWatched, onToggleSaved, onAddMovie, onRetry, onEdit, onDelete }: DashboardPageProps) {
+export function DashboardPage({ movies, visibleMovies, firstName, watchlistCount, watchedCount, isLoading, error, onToggleWatched, onToggleSaved, onAddMovie, onRetry, onEdit, onDelete }: DashboardPageProps) {
   const slides = createFeaturedSlides(movies)
   const [activeIndex, setActiveIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
@@ -86,7 +87,7 @@ export function DashboardPage({ movies, visibleMovies, watchlistCount, watchedCo
       <section className="stats-grid" aria-label="Your movie stats">
         <article className="stat-card"><div className="stat-icon violet">▤</div><div><p>IN YOUR WATCHLIST</p><strong>{watchlistCount}</strong><span>films to look forward to</span></div><span className="stat-arrow">↗</span></article>
         <article className="stat-card"><div className="stat-icon green">✓</div><div><p>MOVIES WATCHED</p><strong>{watchedCount}</strong><span>you’re on a roll!</span></div><span className="stat-arrow">↗</span></article>
-        <article className="stat-card"><div className="stat-icon amber">★</div><div><p>YOUR AVERAGE RATING</p><strong>8.2<span className="stat-unit">/10</span></strong><span>excellent taste, Alex</span></div><span className="stat-arrow">↗</span></article>
+        <article className="stat-card"><div className="stat-icon amber">★</div><div><p>YOUR AVERAGE RATING</p><strong>8.2<span className="stat-unit">/10</span></strong><span>excellent taste, {firstName}</span></div><span className="stat-arrow">↗</span></article>
       </section>
 
       <section className="collection-section">

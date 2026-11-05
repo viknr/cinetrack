@@ -61,6 +61,7 @@ function AppRoutes() {
 
   const watchedCount = movies.filter((movie) => movie.status === 'watched').length
   const watchlistCount = movies.filter((movie) => movie.status === 'watchlist').length
+  const firstName = session?.displayName.trim().split(/\s+/)[0] || 'film fan'
   const visibleMovies = useMemo(() => {
     const query = search.trim().toLowerCase()
     return movies.filter((movie) => !query || `${movie.title} ${movie.genre}`.toLowerCase().includes(query))
@@ -214,10 +215,10 @@ function AppRoutes() {
         </header>
 
         <div className="page-content">
-          <section className="welcome-row"><div><p className="date-label">THURSDAY, NOVEMBER 5, 2026</p><h1>{activePage === 'Dashboard' ? <>Good evening, {session?.displayName ?? 'film fan'} <span>✦</span></> : activePage}</h1><p className="welcome-subtitle">{pageCopy[activePage]}</p></div>{!['Discover', 'Movie details', 'Page not found'].includes(activePage) && <button className="add-movie" onClick={() => { setEditingMovie(null); setIsMovieFormOpen(true) }}><span>＋</span> Add a movie</button>}</section>
+          <section className="welcome-row"><div><p className="date-label">THURSDAY, NOVEMBER 5, 2026</p><h1>{activePage === 'Dashboard' ? <>Good evening, {firstName} <span>✦</span></> : activePage}</h1><p className="welcome-subtitle">{pageCopy[activePage]}</p></div>{!['Discover', 'Movie details', 'Page not found'].includes(activePage) && <button className="add-movie" onClick={() => { setEditingMovie(null); setIsMovieFormOpen(true) }}><span>＋</span> Add a movie</button>}</section>
 
           <Routes>
-            <Route path="/" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><DashboardPage movies={movies} visibleMovies={visibleMovies} watchlistCount={watchlistCount} watchedCount={watchedCount} isLoading={isLoadingCatalogue} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onAddMovie={addCarouselMovie} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} /></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><DashboardPage movies={movies} visibleMovies={visibleMovies} firstName={firstName} watchlistCount={watchlistCount} watchedCount={watchedCount} isLoading={isLoadingCatalogue} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onAddMovie={addCarouselMovie} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} /></ProtectedRoute>} />
             <Route path="/discover" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><DiscoverPage query={search} onQueryChange={setSearch} onAddMovie={addTMDBMovie} /></ProtectedRoute>} />
             <Route path="/watchlist" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><CollectionPage title="My watchlist" movies={visibleMovies.filter((movie) => movie.status === 'watchlist')} isLoading={isLoadingCatalogue} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} /></ProtectedRoute>} />
             <Route path="/watched" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><CollectionPage title="Watched" movies={visibleMovies.filter((movie) => movie.status === 'watched')} isLoading={isLoadingCatalogue} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} /></ProtectedRoute>} />
