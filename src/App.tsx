@@ -11,15 +11,23 @@ import { SignInPage } from './pages/SignInPage'
 import { SignUpPage } from './pages/SignUpPage'
 import { clearDemoSession, readDemoSession, registerAccount, signInWithCredentials, type DemoSession } from './services/demoAuth'
 import { fetchMovieCatalogue } from './services/movieData'
+import { useMovieStore } from './stores/movieStore'
 import { tmdbImage } from './services/tmdb'
 import type { TMDBMovieDetails } from './services/tmdb'
 import type { Movie } from './types/movie'
 import './App.css'
 
 function AppRoutes() {
-  const [movies, setMovies] = useState<Movie[]>([])
-  const [isLoadingCatalogue, setIsLoadingCatalogue] = useState(true)
-  const [catalogueError, setCatalogueError] = useState('')
+  const movies = useMovieStore((state) => state.movies)
+  const isLoadingCatalogue = useMovieStore((state) => state.isLoadingCatalogue)
+  const catalogueError = useMovieStore((state) => state.catalogueError)
+  const setMovies = useMovieStore((state) => state.setMovies)
+  const setIsLoadingCatalogue = useMovieStore((state) => state.setIsLoadingCatalogue)
+  const setCatalogueError = useMovieStore((state) => state.setCatalogueError)
+  const toggleMovieWatched = useMovieStore((state) => state.toggleWatched)
+  const addMovieToCollection = useMovieStore((state) => state.addMovie)
+  const updateCollectionMovie = useMovieStore((state) => state.updateMovie)
+  const removeCollectionMovie = useMovieStore((state) => state.deleteMovie)
   const [catalogueRetry, setCatalogueRetry] = useState(0)
   const [search, setSearch] = useState('')
   const [notice, setNotice] = useState('')
@@ -91,15 +99,10 @@ function AppRoutes() {
       })
       .finally(() => { if (!cancelled) setIsLoadingCatalogue(false) })
     return () => { cancelled = true }
-  }, [catalogueRetry])
-
-  useEffect(() => {
-    if (isLoadingCatalogue || catalogueError) return
-    window.localStorage.setItem('cinetrack-movies', JSON.stringify(movies))
-  }, [movies, isLoadingCatalogue, catalogueError])
+  }, [catalogueRetry, setCatalogueError, setIsLoadingCatalogue, setMovies])
 
   function toggleWatched(id: number) {
-    setMovies((current) => current.map((movie) => movie.id === id ? { ...movie, status: movie.status === 'watched' ? 'watchlist' : 'watched' } : movie))
+    toggleMovieWatched(id)
   }
 
   function showNotice(message: string) {
@@ -121,12 +124,12 @@ function AppRoutes() {
       return
     }
     if (existing) {
-      setMovies((current) => current.map((item) => item.id === existing.id ? { ...item, status: 'watchlist' } : item))
+      updateCollectionMovie(existing.id, { status: 'watchlist' })
       showNotice(`${movie.title} moved to your watchlist`)
       return
     }
     const nextId = Math.max(0, ...movies.map((item) => item.id)) + 1
-    setMovies((current) => [...current, { ...movie, id: nextId, status: 'watchlist' }])
+    addMovieToCollection({ ...movie, id: nextId, status: 'watchlist' })
     showNotice(`${movie.title} added to your watchlist`)
   }
 
@@ -139,7 +142,7 @@ function AppRoutes() {
     const year = Number(movie.release_date?.slice(0, 4)) || 0
     const posterUrl = tmdbImage(movie.poster_path)
     const nextId = Math.max(0, ...movies.map((item) => item.id)) + 1
-    setMovies((current) => [...current, {
+    addMovieToCollection({
       id: nextId,
       tmdbId: movie.id,
       title: movie.title,
@@ -154,17 +157,17 @@ function AppRoutes() {
       cast: movie.credits.cast.slice(0, 5).map((person) => person.name),
       tone: `Movie poster for ${movie.title}`,
       status: 'watchlist',
-    }])
+    })
     showNotice(`${movie.title} added to your watchlist`)
   }
 
   function saveMovie(values: MovieFormValues) {
     if (editingMovie) {
-      setMovies((current) => current.map((movie) => movie.id === editingMovie.id ? { ...movie, ...values, id: movie.id } : movie))
+      updateCollectionMovie(editingMovie.id, values)
       showNotice(`${values.title} updated`)
     } else {
       const nextId = Math.max(0, ...movies.map((movie) => movie.id)) + 1
-      setMovies((current) => [...current, { ...values, id: nextId }])
+      addMovieToCollection({ ...values, id: nextId })
       showNotice(`${values.title} added to your watchlist`)
     }
     setIsMovieFormOpen(false)
@@ -178,7 +181,7 @@ function AppRoutes() {
 
   function deleteMovie(movie: Movie) {
     if (!window.confirm(`Delete “${movie.title}” from your collection? This cannot be undone.`)) return
-    setMovies((current) => current.filter((item) => item.id !== movie.id))
+    removeCollectionMovie(movie.id)
     showNotice(`${movie.title} deleted`)
   }
 
