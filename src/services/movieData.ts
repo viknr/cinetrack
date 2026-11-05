@@ -1,4 +1,5 @@
 import type { Movie } from '../types/movie'
+import { tmdbImage } from './tmdb'
 
 export async function fetchMovieCatalogue(): Promise<Movie[]> {
   const response = await fetch(`${import.meta.env.BASE_URL}data/movies.json`)
@@ -11,5 +12,8 @@ export async function fetchMovieCatalogue(): Promise<Movie[]> {
     throw new Error('The movie catalogue has an unexpected format.')
   }
 
-  return movies
+  return movies.map((movie) => ({
+    ...movie,
+    posterUrl: movie.posterUrl ?? tmdbImage(movie.posterPath ?? null) ?? undefined,
+  }))
 }

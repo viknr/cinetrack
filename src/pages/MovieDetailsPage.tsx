@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { findTMDBMovieDetails, tmdbImage } from '../services/tmdb'
+import { findTMDBMovieDetails, getTMDBMovieDetails, tmdbImage } from '../services/tmdb'
 import type { TMDBMovieDetails } from '../services/tmdb'
 import type { Movie } from '../types/movie'
 
@@ -17,6 +17,7 @@ export function MovieDetailsPage({ movies, isLoading, error, onToggleWatched }: 
   const lookupMovieId = movie?.id
   const lookupMovieTitle = movie?.title ?? ''
   const lookupMovieYear = movie?.year ?? 0
+  const lookupTMDBId = movie?.tmdbId
   const hasStoredOverview = Boolean(movie?.overview)
   const [fetchedDetails, setFetchedDetails] = useState<{ catalogueId: number; details: TMDBMovieDetails } | null>(null)
   const [lookupError, setLookupError] = useState<{ catalogueId: number; message: string } | null>(null)
@@ -24,7 +25,8 @@ export function MovieDetailsPage({ movies, isLoading, error, onToggleWatched }: 
   useEffect(() => {
     if (lookupMovieId === undefined || hasStoredOverview) return
     let cancelled = false
-    findTMDBMovieDetails(lookupMovieTitle, lookupMovieYear)
+    const request = lookupTMDBId ? getTMDBMovieDetails(lookupTMDBId) : findTMDBMovieDetails(lookupMovieTitle, lookupMovieYear)
+    request
       .then((details) => { if (!cancelled) setFetchedDetails({ catalogueId: lookupMovieId, details }) })
       .catch((requestError: unknown) => {
         if (!cancelled) {
@@ -39,7 +41,7 @@ export function MovieDetailsPage({ movies, isLoading, error, onToggleWatched }: 
         }
       })
     return () => { cancelled = true }
-  }, [lookupMovieId, lookupMovieTitle, lookupMovieYear, hasStoredOverview])
+  }, [lookupMovieId, lookupMovieTitle, lookupMovieYear, lookupTMDBId, hasStoredOverview])
 
   const tmdbDetails = fetchedDetails && fetchedDetails.catalogueId === movie?.id ? fetchedDetails.details : null
   const tmdbError = lookupError && lookupError.catalogueId === movie?.id ? lookupError.message : ''

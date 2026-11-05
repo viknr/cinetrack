@@ -9,6 +9,7 @@ export type Movie = {
   tone: string
   status: 'watchlist' | 'watched'
   tmdbId?: number
+  posterPath?: string
   posterUrl?: string
   overview?: string
   director?: string
