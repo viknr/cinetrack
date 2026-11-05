@@ -1,4 +1,5 @@
 import type { Movie } from '../types/movie'
+import { Link } from 'react-router-dom'
 
 type MovieCardProps = {
   movie: Movie
@@ -16,6 +17,7 @@ export function MovieCard({ movie, onToggleWatched, onToggleSaved }: MovieCardPr
       </div>
       <div className="movie-info"><div><h3>{movie.title}</h3><p>{movie.year} <span>·</span> {movie.runtime}</p></div><span className="rating">★ {movie.rating}</span></div>
       <button className="watched-toggle" onClick={() => onToggleWatched(movie.id)}>{movie.status === 'watched' ? '✓ Watched' : '+ Mark as watched'}</button>
+      <Link className="movie-detail-link" to={`/movies/${movie.id}`}>View details <span aria-hidden="true">↗</span></Link>
     </article>
   )
 }

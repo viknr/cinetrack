@@ -1,6 +1,6 @@
 # CineTrack
 
-CineTrack is a React + TypeScript movie collection app built with Vite. The collection is loaded from `public/data/movies.json`; Discover can also search The Movie Database (TMDB) for real movie posters and details. No extra JavaScript packages are needed for either data request.
+CineTrack is a React + TypeScript movie collection app built with Vite and React Router. Navigation uses hash-based URLs so routes work on GitHub Pages. The collection is loaded from `public/data/movies.json`; Discover can also search The Movie Database (TMDB) for real movie posters and details.
 
 ## Run CineTrack
 
@@ -28,3 +28,12 @@ TMDB requires attribution for non-commercial use. CineTrack shows its logo and t
 ## Movie catalogue data
 
 The starter catalogue contains at least ten movie records in `public/data/movies.json`. The app reads the file through `fetchMovieCatalogue()` in `src/services/movieData.ts`, using the configured Vite base path so it can also be loaded from a GitHub Pages project URL. Each record includes an id, title, year, genre, rating, runtime, poster style, descriptive alt text and watch status.
+
+## Routes
+
+- `/#/` — Dashboard
+- `/#/discover` — Search TMDB
+- `/#/watchlist` — Movies to watch
+- `/#/watched` — Watched movies
+- `/#/movies/:movieId` — A movie's details
+- Any other path displays the not-found page.
