@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { HashRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { HashRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { DiscoverPage } from './components/DiscoverPage'
+import { ProtectedRoute } from './components/ProtectedRoute'
 import { Sidebar } from './components/Sidebar'
 import { MovieForm, type MovieFormValues } from './components/MovieForm'
 import { MovieRatingFlow } from './components/MovieRatingFlow'
@@ -278,11 +279,6 @@ function AppRoutes() {
       {isRatingFlowOpen && <MovieRatingFlow movies={currentMovies} onRate={saveMovieRating} onClose={() => setIsRatingFlowOpen(false)} />}
     </div>
   )
-}
-
-function ProtectedRoute({ isAuthenticated, children }: { isAuthenticated: boolean; children: ReactNode }) {
-  const location = useLocation()
-  return isAuthenticated ? <>{children}</> : <Navigate to="/signin" state={{ from: location }} replace />
 }
 
 function App() {

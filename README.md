@@ -49,3 +49,15 @@ Each account's movie collection is saved separately in this browser's local stor
 The shared movie collection, active account, catalogue loading/error state, and collection actions live in the Zustand store at `src/stores/movieStore.ts`. Pages subscribe to the specific store values they need. Screen-only state, such as whether the add/edit dialog is open, stays in React component state. Movie changes are written to an account-specific local-storage key.
 
 Personal movie scores use a separate `userRating` field from the TMDB-provided rating. The dashboard calculates its average from movies the user has rated, and its rating flow saves scores from 1 to 10 in the same collection store.
+
+## Automated tests
+
+Run the test suite with:
+
+```bash
+npm test
+```
+
+For watch mode while editing tests, run `npm run test:watch`. The suite uses Vitest, jsdom, React Testing Library and `user-event` to check behavior through the rendered interface. It currently has nine passing tests across five files, covering movie-form validation and saving, sign-up validation, protected-route access, personal rating progression, collection CRUD, and keeping account collections separate.
+
+To show each test name in the terminal when capturing test evidence, run `npm test -- --reporter=verbose`.
