@@ -1,21 +1,36 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { MovieCard } from './components/MovieCard'
 import { DiscoverPage } from './components/DiscoverPage'
 import { Sidebar } from './components/Sidebar'
-import { featuredMovie, movies as initialMovies } from './data/movies'
+import { featuredMovie } from './data/movies'
+import { fetchMovieCatalogue } from './services/movieData'
 import { tmdbImage } from './services/tmdb'
 import type { TMDBMovieDetails } from './services/tmdb'
 import type { Movie } from './types/movie'
 import './App.css'
 
 function App() {
-  const [movies, setMovies] = useState(initialMovies)
+  const [movies, setMovies] = useState<Movie[]>([])
+  const [isLoadingCatalogue, setIsLoadingCatalogue] = useState(true)
+  const [catalogueError, setCatalogueError] = useState('')
+  const [catalogueRetry, setCatalogueRetry] = useState(0)
   const [activePage, setActivePage] = useState('Dashboard')
   const [search, setSearch] = useState('')
   const [notice, setNotice] = useState('')
 
   const watchedCount = movies.filter((movie) => movie.status === 'watched').length
   const watchlistCount = movies.filter((movie) => movie.status === 'watchlist').length
+
+  useEffect(() => {
+    let cancelled = false
+    fetchMovieCatalogue()
+      .then((catalogue) => { if (!cancelled) setMovies(catalogue) })
+      .catch((error: unknown) => {
+        if (!cancelled) setCatalogueError(error instanceof Error ? error.message : 'We could not load the movie catalogue.')
+      })
+      .finally(() => { if (!cancelled) setIsLoadingCatalogue(false) })
+    return () => { cancelled = true }
+  }, [catalogueRetry])
   const visibleMovies = useMemo(() => {
     const query = search.trim().toLowerCase()
     return movies.filter((movie) => {
@@ -113,7 +128,9 @@ function App() {
 
           {activePage === 'Discover' ? <DiscoverPage query={search} onQueryChange={setSearch} onAddMovie={addTMDBMovie} /> : <section className="collection-section">
             <div className="section-heading"><div><p className="section-kicker">YOUR COLLECTION</p><h2>{activePage === 'Dashboard' || activePage === 'Discover' ? 'Picked for you' : activePage}</h2></div><div className="section-actions"><span className="movie-count">{visibleMovies.length} films</span><button className="view-all" onClick={() => navigate(activePage === 'Dashboard' ? 'Discover' : 'Dashboard')}>{activePage === 'Dashboard' ? 'View all' : 'Back to dashboard'} <span>↗</span></button></div></div>
-            {visibleMovies.length > 0 ? <div className="movie-grid">{visibleMovies.map((movie: Movie) => <MovieCard key={movie.id} movie={movie} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} />)}</div> : <div className="empty-state"><span>⌕</span><h3>No films found</h3><p>Try a different title or genre.</p></div>}
+            {isLoadingCatalogue ? <div className="empty-state" role="status"><span>◌</span><h3>Loading your movies…</h3></div>
+              : catalogueError ? <div className="empty-state" role="alert"><span>!</span><h3>Could not load your movies</h3><p>{catalogueError}</p><button className="retry-button" onClick={() => { setIsLoadingCatalogue(true); setCatalogueError(''); setCatalogueRetry((attempt) => attempt + 1) }}>Try again</button></div>
+                : visibleMovies.length > 0 ? <div className="movie-grid">{visibleMovies.map((movie: Movie) => <MovieCard key={movie.id} movie={movie} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} />)}</div> : <div className="empty-state"><span>⌕</span><h3>No films found</h3><p>Try a different title or genre.</p></div>}
           </section>}
           <footer className="page-footer"><span>Made for people who love movies <span className="footer-heart">♥</span></span><span>CINETRACK <span className="footer-dot">·</span> YOUR PERSONAL FILM SPACE</span></footer>
         </div>

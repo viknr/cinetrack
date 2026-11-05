@@ -1,0 +1,12 @@
+[
+  { "id": 1, "title": "Dune: Part Two", "year": 2024, "genre": "Sci-fi", "rating": "8.6", "runtime": "2h 46m", "poster": "dune", "tone": "Desert skies and a lone figure on a vast dune", "status": "watchlist" },
+  { "id": 2, "title": "Poor Things", "year": 2023, "genre": "Drama", "rating": "7.8", "runtime": "2h 21m", "poster": "poor-things", "tone": "Dreamlike pastel city at twilight", "status": "watched" },
+  { "id": 3, "title": "Past Lives", "year": 2023, "genre": "Romance", "rating": "7.9", "runtime": "1h 45m", "poster": "past-lives", "tone": "Two people beneath a glowing city sky", "status": "watchlist" },
+  { "id": 4, "title": "The Batman", "year": 2022, "genre": "Thriller", "rating": "7.8", "runtime": "2h 56m", "poster": "batman", "tone": "Rainy crimson city skyline", "status": "watched" },
+  { "id": 5, "title": "Spider-Man: Across the Spider-Verse", "year": 2023, "genre": "Animation", "rating": "8.6", "runtime": "2h 20m", "poster": "spider-verse", "tone": "Vibrant comic-book city at night", "status": "watchlist" },
+  { "id": 6, "title": "The Grand Budapest Hotel", "year": 2014, "genre": "Comedy", "rating": "8.1", "runtime": "1h 39m", "poster": "budapest", "tone": "A pink grand hotel in the mountains", "status": "watched" },
+  { "id": 7, "title": "Arrival", "year": 2016, "genre": "Sci-fi", "rating": "7.9", "runtime": "1h 56m", "poster": "arrival", "tone": "Misty mountains and an enormous alien spacecraft", "status": "watchlist" },
+  { "id": 8, "title": "Parasite", "year": 2019, "genre": "Thriller", "rating": "8.5", "runtime": "2h 12m", "poster": "parasite", "tone": "A modern house framed by a deep green garden", "status": "watched" },
+  { "id": 9, "title": "Whiplash", "year": 2014, "genre": "Drama", "rating": "8.5", "runtime": "1h 47m", "poster": "whiplash", "tone": "A drummer on a spotlight-lit stage", "status": "watchlist" },
+  { "id": 10, "title": "Spirited Away", "year": 2001, "genre": "Animation", "rating": "8.6", "runtime": "2h 5m", "poster": "spirited-away", "tone": "A magical bathhouse glowing beside a river", "status": "watched" }
+]
