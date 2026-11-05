@@ -8,4 +8,9 @@ export type Movie = {
   poster: string
   tone: string
   status: 'watchlist' | 'watched'
+  tmdbId?: number
+  posterUrl?: string
+  overview?: string
+  director?: string
+  cast?: string[]
 }
