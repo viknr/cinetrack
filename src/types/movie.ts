@@ -4,6 +4,7 @@ export type Movie = {
   year: number
   genre: string
   rating: string
+  userRating?: number
   runtime: string
   poster: string
   tone: string

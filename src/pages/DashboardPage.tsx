@@ -9,6 +9,8 @@ type DashboardPageProps = {
   movies: Movie[]
   visibleMovies: Movie[]
   firstName: string
+  averageRating: string | null
+  ratingCount: number
   watchlistCount: number
   watchedCount: number
   isLoading: boolean
@@ -19,6 +21,7 @@ type DashboardPageProps = {
   onRetry: () => void
   onEdit: (movie: Movie) => void
   onDelete: (movie: Movie) => void
+  onOpenRating: () => void
 }
 
 type FeatureSlide = { movie: Movie; description: string }
@@ -48,7 +51,7 @@ function createFeaturedSlides(movies: Movie[]): FeatureSlide[] {
   ]
 }
 
-export function DashboardPage({ movies, visibleMovies, firstName, watchlistCount, watchedCount, isLoading, error, onToggleWatched, onToggleSaved, onAddMovie, onRetry, onEdit, onDelete }: DashboardPageProps) {
+export function DashboardPage({ movies, visibleMovies, firstName, averageRating, ratingCount, watchlistCount, watchedCount, isLoading, error, onToggleWatched, onToggleSaved, onAddMovie, onRetry, onEdit, onDelete, onOpenRating }: DashboardPageProps) {
   const slides = createFeaturedSlides(movies)
   const [activeIndex, setActiveIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
@@ -87,7 +90,7 @@ export function DashboardPage({ movies, visibleMovies, firstName, watchlistCount
       <section className="stats-grid" aria-label="Your movie stats">
         <article className="stat-card"><div className="stat-icon violet">▤</div><div><p>IN YOUR WATCHLIST</p><strong>{watchlistCount}</strong><span>films to look forward to</span></div><span className="stat-arrow">↗</span></article>
         <article className="stat-card"><div className="stat-icon green">✓</div><div><p>MOVIES WATCHED</p><strong>{watchedCount}</strong><span>you’re on a roll!</span></div><span className="stat-arrow">↗</span></article>
-        <article className="stat-card"><div className="stat-icon amber">★</div><div><p>YOUR AVERAGE RATING</p><strong>8.2<span className="stat-unit">/10</span></strong><span>excellent taste, {firstName}</span></div><span className="stat-arrow">↗</span></article>
+        <article className="stat-card rating-stat"><div className="stat-icon amber">★</div><div className="rating-stat-copy"><p>YOUR AVERAGE RATING</p><strong>{averageRating ?? '—'}{averageRating !== null && <span className="stat-unit">/10</span>}</strong><span>{ratingCount ? `From ${ratingCount} ${ratingCount === 1 ? 'movie' : 'movies'}, ${firstName}` : 'No personal ratings yet'}</span>{movies.length ? <button type="button" className="rating-stat-action" onClick={onOpenRating}>{ratingCount ? 'Rate movies' : 'Rate your first movie'}<span aria-hidden="true"> →</span></button> : <Link className="rating-stat-action" to="/discover">Add a movie to rate <span aria-hidden="true">→</span></Link>}</div><span className="stat-arrow">↗</span></article>
       </section>
 
       <section className="collection-section">

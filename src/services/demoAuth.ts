@@ -1,5 +1,6 @@
 export type DemoSession = {
   displayName: string
+  userId: string
   token: string
 }
 
@@ -31,9 +32,9 @@ function readAccounts(): StoredAccount[] {
   return []
 }
 
-function saveSession(displayName: string): DemoSession {
+function saveSession(displayName: string, userId: string): DemoSession {
   const token = `demo-${window.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`}`
-  const session = { displayName, token }
+  const session = { displayName, userId, token }
   window.localStorage.setItem(sessionStorageKey, JSON.stringify(session))
   return session
 }
@@ -55,7 +56,13 @@ export function readDemoSession(): DemoSession | null {
     const session: unknown = JSON.parse(stored)
     if (session && typeof session === 'object' && 'displayName' in session && 'token' in session
       && typeof session.displayName === 'string' && typeof session.token === 'string') {
-      return session as DemoSession
+      const storedUserId = 'userId' in session && typeof session.userId === 'string' ? session.userId : ''
+      const matchingAccounts = readAccounts().filter((account) => account.displayName === session.displayName)
+      const userId = storedUserId || (matchingAccounts.length === 1 ? matchingAccounts[0].email
+        : session.displayName === 'Alex Morgan' ? demoEmail : `legacy:${session.token}`)
+      const upgradedSession = { displayName: session.displayName, userId, token: session.token }
+      if (!storedUserId) window.localStorage.setItem(sessionStorageKey, JSON.stringify(upgradedSession))
+      return upgradedSession
     }
   } catch {
     window.localStorage.removeItem(sessionStorageKey)
@@ -65,14 +72,14 @@ export function readDemoSession(): DemoSession | null {
 
 export async function signInWithCredentials(email: string, password: string): Promise<DemoSession | null> {
   const normalizedEmail = email.trim().toLowerCase()
-  if (normalizedEmail === demoEmail && password === demoPassword) return saveSession('Alex Morgan')
+  if (normalizedEmail === demoEmail && password === demoPassword) return saveSession('Alex Morgan', demoEmail)
 
   const account = readAccounts().find((item) => item.email === normalizedEmail)
   if (!account) return null
   const saltBytes = Uint8Array.from(account.salt.match(/.{1,2}/g) ?? [], (byte) => Number.parseInt(byte, 16))
   const candidate = await passwordVerifier(password, saltBytes.buffer as ArrayBuffer)
   if (candidate !== account.passwordHash) return null
-  return saveSession(account.displayName)
+  return saveSession(account.displayName, account.email)
 }
 
 export async function registerAccount(displayName: string, email: string, password: string): Promise<{ session?: DemoSession; error?: string }> {
@@ -90,7 +97,7 @@ export async function registerAccount(displayName: string, email: string, passwo
     passwordHash: await passwordVerifier(password, saltBuffer),
   }
   window.localStorage.setItem(accountsStorageKey, JSON.stringify([...readAccounts(), account]))
-  return { session: saveSession(account.displayName) }
+  return { session: saveSession(account.displayName, account.email) }
 }
 
 export function clearDemoSession() {

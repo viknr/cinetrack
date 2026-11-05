@@ -3,6 +3,7 @@ import { HashRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'r
 import { DiscoverPage } from './components/DiscoverPage'
 import { Sidebar } from './components/Sidebar'
 import { MovieForm, type MovieFormValues } from './components/MovieForm'
+import { MovieRatingFlow } from './components/MovieRatingFlow'
 import { CollectionPage } from './pages/CollectionPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { MovieDetailsPage } from './pages/MovieDetailsPage'
@@ -11,13 +12,14 @@ import { SignInPage } from './pages/SignInPage'
 import { SignUpPage } from './pages/SignUpPage'
 import { clearDemoSession, readDemoSession, registerAccount, signInWithCredentials, type DemoSession } from './services/demoAuth'
 import { fetchMovieCatalogue } from './services/movieData'
-import { useMovieStore } from './stores/movieStore'
+import { getCollectionStorageKey, useMovieStore } from './stores/movieStore'
 import { tmdbImage } from './services/tmdb'
 import type { TMDBMovieDetails } from './services/tmdb'
 import type { Movie } from './types/movie'
 import './App.css'
 
 function AppRoutes() {
+  const activeUserId = useMovieStore((state) => state.activeUserId)
   const movies = useMovieStore((state) => state.movies)
   const isLoadingCatalogue = useMovieStore((state) => state.isLoadingCatalogue)
   const catalogueError = useMovieStore((state) => state.catalogueError)
@@ -27,19 +29,26 @@ function AppRoutes() {
   const toggleMovieWatched = useMovieStore((state) => state.toggleWatched)
   const addMovieToCollection = useMovieStore((state) => state.addMovie)
   const updateCollectionMovie = useMovieStore((state) => state.updateMovie)
+  const saveMovieRating = useMovieStore((state) => state.rateMovie)
   const removeCollectionMovie = useMovieStore((state) => state.deleteMovie)
+  const setActiveUser = useMovieStore((state) => state.setActiveUser)
   const [catalogueRetry, setCatalogueRetry] = useState(0)
   const [search, setSearch] = useState('')
   const [notice, setNotice] = useState('')
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null)
   const [isMovieFormOpen, setIsMovieFormOpen] = useState(false)
+  const [isRatingFlowOpen, setIsRatingFlowOpen] = useState(false)
   const [session, setSession] = useState<DemoSession | null>(readDemoSession)
   const location = useLocation()
   const navigate = useNavigate()
+  const signedInUserId = session?.userId ?? null
 
   async function signIn(email: string, password: string) {
     const nextSession = await signInWithCredentials(email, password)
     if (!nextSession) return false
+    setIsLoadingCatalogue(true)
+    setCatalogueError('')
+    setActiveUser(nextSession.userId)
     setSession(nextSession)
     const returnPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/'
     navigate(returnPath, { replace: true })
@@ -49,6 +58,9 @@ function AppRoutes() {
   async function signUp(displayName: string, email: string, password: string) {
     const result = await registerAccount(displayName, email, password)
     if (result.error || !result.session) return result.error ?? 'We could not create the account.'
+    setIsLoadingCatalogue(true)
+    setCatalogueError('')
+    setActiveUser(result.session.userId)
     setSession(result.session)
     const returnPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/'
     navigate(returnPath, { replace: true })
@@ -57,6 +69,7 @@ function AppRoutes() {
 
   function signOut() {
     clearDemoSession()
+    setActiveUser(null)
     setSession(null)
     navigate('/', { replace: true })
   }
@@ -67,39 +80,67 @@ function AppRoutes() {
         : location.pathname === '/watched' ? 'Watched'
           : location.pathname.startsWith('/movies/') ? 'Movie details' : 'Page not found'
 
-  const watchedCount = movies.filter((movie) => movie.status === 'watched').length
-  const watchlistCount = movies.filter((movie) => movie.status === 'watchlist').length
+  const collectionMatchesSession = activeUserId === signedInUserId
+  const currentMovies = useMemo(() => collectionMatchesSession ? movies : [], [collectionMatchesSession, movies])
+  const isCurrentCollectionLoading = isLoadingCatalogue || (Boolean(signedInUserId) && !collectionMatchesSession)
+  const watchedCount = currentMovies.filter((movie) => movie.status === 'watched').length
+  const watchlistCount = currentMovies.filter((movie) => movie.status === 'watchlist').length
   const firstName = session?.displayName.trim().split(/\s+/)[0] || 'film fan'
+  const ratedMovies = currentMovies.filter((movie) => typeof movie.userRating === 'number')
+  const averageRating = ratedMovies.length
+    ? (ratedMovies.reduce((total, movie) => total + (movie.userRating ?? 0), 0) / ratedMovies.length).toFixed(1)
+    : null
   const visibleMovies = useMemo(() => {
     const query = search.trim().toLowerCase()
-    return movies.filter((movie) => !query || `${movie.title} ${movie.genre}`.toLowerCase().includes(query))
-  }, [movies, search])
+    return currentMovies.filter((movie) => !query || `${movie.title} ${movie.genre}`.toLowerCase().includes(query))
+  }, [currentMovies, search])
 
   useEffect(() => {
     let cancelled = false
+    if (!signedInUserId) {
+      setActiveUser(null)
+      setIsLoadingCatalogue(false)
+      setCatalogueError('')
+      return () => { cancelled = true }
+    }
+
+    setActiveUser(signedInUserId)
+    setIsLoadingCatalogue(true)
+    setCatalogueError('')
     fetchMovieCatalogue()
       .then((catalogue) => {
         if (cancelled) return
+        const userCollectionKey = getCollectionStorageKey(signedInUserId)
+        let savedMovies: Movie[] | null = null
         try {
-          const saved = window.localStorage.getItem('cinetrack-movies')
-          if (saved) {
-            const parsed: unknown = JSON.parse(saved)
-            if (Array.isArray(parsed) && parsed.every((item) => item && typeof item.id === 'number' && typeof item.title === 'string')) {
-              setMovies(parsed as Movie[])
-              return
+          const userCollection = window.localStorage.getItem(userCollectionKey)
+          if (userCollection) {
+            const parsed: unknown = JSON.parse(userCollection)
+            if (Array.isArray(parsed) && parsed.every((item) => item && typeof item.id === 'number' && typeof item.title === 'string')) savedMovies = parsed as Movie[]
+          }
+
+          const legacyCollection = window.localStorage.getItem('cinetrack-movies')
+          if (legacyCollection) {
+            if (!savedMovies) {
+              const parsed: unknown = JSON.parse(legacyCollection)
+              if (Array.isArray(parsed) && parsed.every((item) => item && typeof item.id === 'number' && typeof item.title === 'string')) {
+                savedMovies = parsed as Movie[]
+                window.localStorage.setItem(userCollectionKey, JSON.stringify(savedMovies))
+              }
             }
+            window.localStorage.removeItem('cinetrack-movies')
           }
         } catch {
-          window.localStorage.removeItem('cinetrack-movies')
+          window.localStorage.removeItem(userCollectionKey)
         }
-        setMovies(catalogue)
+        setMovies(savedMovies ?? catalogue)
       })
       .catch((error: unknown) => {
         if (!cancelled) setCatalogueError(error instanceof Error ? error.message : 'We could not load the movie catalogue.')
       })
       .finally(() => { if (!cancelled) setIsLoadingCatalogue(false) })
     return () => { cancelled = true }
-  }, [catalogueRetry, setCatalogueError, setIsLoadingCatalogue, setMovies])
+  }, [signedInUserId, catalogueRetry, setActiveUser, setCatalogueError, setIsLoadingCatalogue, setMovies])
 
   function toggleWatched(id: number) {
     toggleMovieWatched(id)
@@ -218,14 +259,14 @@ function AppRoutes() {
         </header>
 
         <div className="page-content">
-          <section className="welcome-row"><div><p className="date-label">THURSDAY, NOVEMBER 5, 2026</p><h1>{activePage === 'Dashboard' ? <>Good evening, {firstName} <span>✦</span></> : activePage}</h1><p className="welcome-subtitle">{pageCopy[activePage]}</p></div>{!['Discover', 'Movie details', 'Page not found'].includes(activePage) && <button className="add-movie" onClick={() => { setEditingMovie(null); setIsMovieFormOpen(true) }}><span>＋</span> Add a movie</button>}</section>
+          <section className="welcome-row"><div><p className="date-label">THURSDAY, NOVEMBER 5, 2026</p><h1>{activePage === 'Dashboard' ? <>Good evening, {firstName} <span>✦</span></> : activePage}</h1><p className="welcome-subtitle">{pageCopy[activePage]}</p></div>{!['Discover', 'Movie details', 'Page not found'].includes(activePage) && <button className="add-movie" disabled={isCurrentCollectionLoading} onClick={() => { setEditingMovie(null); setIsMovieFormOpen(true) }}><span>＋</span> Add a movie</button>}</section>
 
           <Routes>
-            <Route path="/" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><DashboardPage movies={movies} visibleMovies={visibleMovies} firstName={firstName} watchlistCount={watchlistCount} watchedCount={watchedCount} isLoading={isLoadingCatalogue} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onAddMovie={addCarouselMovie} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} /></ProtectedRoute>} />
-            <Route path="/discover" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><DiscoverPage query={search} onQueryChange={setSearch} onAddMovie={addTMDBMovie} /></ProtectedRoute>} />
-            <Route path="/watchlist" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><CollectionPage title="My watchlist" movies={visibleMovies.filter((movie) => movie.status === 'watchlist')} isLoading={isLoadingCatalogue} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} /></ProtectedRoute>} />
-            <Route path="/watched" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><CollectionPage title="Watched" movies={visibleMovies.filter((movie) => movie.status === 'watched')} isLoading={isLoadingCatalogue} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} /></ProtectedRoute>} />
-            <Route path="/movies/:movieId" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><MovieDetailsPage movies={movies} isLoading={isLoadingCatalogue} error={catalogueError} onToggleWatched={toggleWatched} /></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}>{isCurrentCollectionLoading ? <div className="empty-state" role="status"><span>◌</span><h3>Loading your collection…</h3></div> : <DashboardPage movies={currentMovies} visibleMovies={visibleMovies} firstName={firstName} averageRating={averageRating} ratingCount={ratedMovies.length} watchlistCount={watchlistCount} watchedCount={watchedCount} isLoading={false} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onAddMovie={addCarouselMovie} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} onOpenRating={() => setIsRatingFlowOpen(true)} />}</ProtectedRoute>} />
+            <Route path="/discover" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}>{isCurrentCollectionLoading ? <div className="empty-state" role="status"><span>◌</span><h3>Loading your collection…</h3></div> : <DiscoverPage query={search} onQueryChange={setSearch} onAddMovie={addTMDBMovie} />}</ProtectedRoute>} />
+            <Route path="/watchlist" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><CollectionPage title="My watchlist" movies={visibleMovies.filter((movie) => movie.status === 'watchlist')} isLoading={isCurrentCollectionLoading} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} /></ProtectedRoute>} />
+            <Route path="/watched" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><CollectionPage title="Watched" movies={visibleMovies.filter((movie) => movie.status === 'watched')} isLoading={isCurrentCollectionLoading} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} /></ProtectedRoute>} />
+            <Route path="/movies/:movieId" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><MovieDetailsPage movies={currentMovies} isLoading={isCurrentCollectionLoading} error={catalogueError} onToggleWatched={toggleWatched} /></ProtectedRoute>} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
 
@@ -234,6 +275,7 @@ function AppRoutes() {
       </main>
       {notice && <div className="toast" role="status">✓ &nbsp;{notice}</div>}
       {isMovieFormOpen && <MovieForm key={editingMovie?.id ?? 'new'} movie={editingMovie ?? undefined} onSave={saveMovie} onClose={() => { setIsMovieFormOpen(false); setEditingMovie(null) }} />}
+      {isRatingFlowOpen && <MovieRatingFlow movies={currentMovies} onRate={saveMovieRating} onClose={() => setIsRatingFlowOpen(false)} />}
     </div>
   )
 }
