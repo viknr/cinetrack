@@ -5,9 +5,11 @@ type MovieCardProps = {
   movie: Movie
   onToggleWatched: (id: number) => void
   onToggleSaved: (id: number) => void
+  onEdit: (movie: Movie) => void
+  onDelete: (movie: Movie) => void
 }
 
-export function MovieCard({ movie, onToggleWatched, onToggleSaved }: MovieCardProps) {
+export function MovieCard({ movie, onToggleWatched, onToggleSaved, onEdit, onDelete }: MovieCardProps) {
   return (
     <article className="movie-card">
       <div className={`poster poster-${movie.poster} ${movie.posterUrl ? 'poster-with-image' : ''}`} style={movie.posterUrl ? { backgroundImage: `linear-gradient(0deg,#0d0b13 1%,transparent 65%),url("${movie.posterUrl}")` } : undefined} role="img" aria-label={movie.tone}>
@@ -18,6 +20,7 @@ export function MovieCard({ movie, onToggleWatched, onToggleSaved }: MovieCardPr
       <div className="movie-info"><div><h3>{movie.title}</h3><p>{movie.year} <span>·</span> {movie.runtime}</p></div><span className="rating">★ {movie.rating}</span></div>
       <button className="watched-toggle" onClick={() => onToggleWatched(movie.id)}>{movie.status === 'watched' ? '✓ Watched' : '+ Mark as watched'}</button>
       <Link className="movie-detail-link" to={`/movies/${movie.id}`}>View details <span aria-hidden="true">↗</span></Link>
+      <div className="movie-management"><button onClick={() => onEdit(movie)}>Edit</button><button onClick={() => onDelete(movie)}>Delete</button></div>
     </article>
   )
 }

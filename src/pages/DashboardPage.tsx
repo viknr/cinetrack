@@ -16,6 +16,8 @@ type DashboardPageProps = {
   onToggleSaved: (id: number) => void
   onAddMovie: (movie: Movie) => void
   onRetry: () => void
+  onEdit: (movie: Movie) => void
+  onDelete: (movie: Movie) => void
 }
 
 type FeatureSlide = { movie: Movie; description: string }
@@ -45,7 +47,7 @@ function createFeaturedSlides(movies: Movie[]): FeatureSlide[] {
   ]
 }
 
-export function DashboardPage({ movies, visibleMovies, watchlistCount, watchedCount, isLoading, error, onToggleWatched, onToggleSaved, onAddMovie, onRetry }: DashboardPageProps) {
+export function DashboardPage({ movies, visibleMovies, watchlistCount, watchedCount, isLoading, error, onToggleWatched, onToggleSaved, onAddMovie, onRetry, onEdit, onDelete }: DashboardPageProps) {
   const slides = createFeaturedSlides(movies)
   const [activeIndex, setActiveIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
@@ -91,7 +93,7 @@ export function DashboardPage({ movies, visibleMovies, watchlistCount, watchedCo
         <div className="section-heading"><div><p className="section-kicker">YOUR COLLECTION</p><h2>Picked for you</h2></div><Link className="view-all" to="/watchlist">Open your watchlist <span>↗</span></Link></div>
         {isLoading ? <div className="empty-state" role="status"><span>◌</span><h3>Loading your movies…</h3></div>
           : error ? <div className="empty-state" role="alert"><h3>Could not load your movies</h3><p>{error}</p><button className="retry-button" onClick={onRetry}>Try again</button></div>
-            : visibleMovies.length > 0 ? <div className="movie-grid">{visibleMovies.slice(0, 6).map((movie) => <MovieCard key={movie.id} movie={movie} onToggleWatched={onToggleWatched} onToggleSaved={onToggleSaved} />)}</div>
+            : visibleMovies.length > 0 ? <div className="movie-grid">{visibleMovies.slice(0, 6).map((movie) => <MovieCard key={movie.id} movie={movie} onToggleWatched={onToggleWatched} onToggleSaved={onToggleSaved} onEdit={onEdit} onDelete={onDelete} />)}</div>
               : <div className="empty-state"><span>⌕</span><h3>No films found</h3></div>}
       </section>
     </>

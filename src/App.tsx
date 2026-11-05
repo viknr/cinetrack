@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { HashRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { HashRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { DiscoverPage } from './components/DiscoverPage'
 import { Sidebar } from './components/Sidebar'
+import { MovieForm, type MovieFormValues } from './components/MovieForm'
 import { CollectionPage } from './pages/CollectionPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { MovieDetailsPage } from './pages/MovieDetailsPage'
@@ -12,13 +13,6 @@ import type { TMDBMovieDetails } from './services/tmdb'
 import type { Movie } from './types/movie'
 import './App.css'
 
-const pagePaths: Record<string, string> = {
-  Dashboard: '/',
-  Discover: '/discover',
-  'My watchlist': '/watchlist',
-  Watched: '/watched',
-}
-
 function AppRoutes() {
   const [movies, setMovies] = useState<Movie[]>([])
   const [isLoadingCatalogue, setIsLoadingCatalogue] = useState(true)
@@ -26,8 +20,9 @@ function AppRoutes() {
   const [catalogueRetry, setCatalogueRetry] = useState(0)
   const [search, setSearch] = useState('')
   const [notice, setNotice] = useState('')
+  const [editingMovie, setEditingMovie] = useState<Movie | null>(null)
+  const [isMovieFormOpen, setIsMovieFormOpen] = useState(false)
   const location = useLocation()
-  const navigate = useNavigate()
 
   const activePage = location.pathname === '/' ? 'Dashboard'
     : location.pathname === '/discover' ? 'Discover'
@@ -45,7 +40,22 @@ function AppRoutes() {
   useEffect(() => {
     let cancelled = false
     fetchMovieCatalogue()
-      .then((catalogue) => { if (!cancelled) setMovies(catalogue) })
+      .then((catalogue) => {
+        if (cancelled) return
+        try {
+          const saved = window.localStorage.getItem('cinetrack-movies')
+          if (saved) {
+            const parsed: unknown = JSON.parse(saved)
+            if (Array.isArray(parsed) && parsed.every((item) => item && typeof item.id === 'number' && typeof item.title === 'string')) {
+              setMovies(parsed as Movie[])
+              return
+            }
+          }
+        } catch {
+          window.localStorage.removeItem('cinetrack-movies')
+        }
+        setMovies(catalogue)
+      })
       .catch((error: unknown) => {
         if (!cancelled) setCatalogueError(error instanceof Error ? error.message : 'We could not load the movie catalogue.')
       })
@@ -53,10 +63,10 @@ function AppRoutes() {
     return () => { cancelled = true }
   }, [catalogueRetry])
 
-  function navigateToPage(page: string) {
-    if (page === 'Discover') setSearch('')
-    navigate(pagePaths[page] ?? '/')
-  }
+  useEffect(() => {
+    if (isLoadingCatalogue || catalogueError) return
+    window.localStorage.setItem('cinetrack-movies', JSON.stringify(movies))
+  }, [movies, isLoadingCatalogue, catalogueError])
 
   function toggleWatched(id: number) {
     setMovies((current) => current.map((movie) => movie.id === id ? { ...movie, status: movie.status === 'watched' ? 'watchlist' : 'watched' } : movie))
@@ -118,6 +128,30 @@ function AppRoutes() {
     showNotice(`${movie.title} added to your watchlist`)
   }
 
+  function saveMovie(values: MovieFormValues) {
+    if (editingMovie) {
+      setMovies((current) => current.map((movie) => movie.id === editingMovie.id ? { ...movie, ...values, id: movie.id } : movie))
+      showNotice(`${values.title} updated`)
+    } else {
+      const nextId = Math.max(0, ...movies.map((movie) => movie.id)) + 1
+      setMovies((current) => [...current, { ...values, id: nextId }])
+      showNotice(`${values.title} added to your watchlist`)
+    }
+    setIsMovieFormOpen(false)
+    setEditingMovie(null)
+  }
+
+  function editMovie(movie: Movie) {
+    setEditingMovie(movie)
+    setIsMovieFormOpen(true)
+  }
+
+  function deleteMovie(movie: Movie) {
+    if (!window.confirm(`Delete “${movie.title}” from your collection? This cannot be undone.`)) return
+    setMovies((current) => current.filter((item) => item.id !== movie.id))
+    showNotice(`${movie.title} deleted`)
+  }
+
   function retryCatalogue() {
     setIsLoadingCatalogue(true)
     setCatalogueError('')
@@ -144,13 +178,13 @@ function AppRoutes() {
         </header>
 
         <div className="page-content">
-          <section className="welcome-row"><div><p className="date-label">THURSDAY, NOVEMBER 5, 2026</p><h1>{activePage === 'Dashboard' ? <>Good evening, Alex <span>✦</span></> : activePage}</h1><p className="welcome-subtitle">{pageCopy[activePage]}</p></div>{!['Discover', 'Movie details', 'Page not found'].includes(activePage) && <button className="add-movie" onClick={() => navigateToPage('Discover')}><span>＋</span> Add a movie</button>}</section>
+          <section className="welcome-row"><div><p className="date-label">THURSDAY, NOVEMBER 5, 2026</p><h1>{activePage === 'Dashboard' ? <>Good evening, Alex <span>✦</span></> : activePage}</h1><p className="welcome-subtitle">{pageCopy[activePage]}</p></div>{!['Discover', 'Movie details', 'Page not found'].includes(activePage) && <button className="add-movie" onClick={() => { setEditingMovie(null); setIsMovieFormOpen(true) }}><span>＋</span> Add a movie</button>}</section>
 
           <Routes>
-            <Route path="/" element={<DashboardPage movies={movies} visibleMovies={visibleMovies} watchlistCount={watchlistCount} watchedCount={watchedCount} isLoading={isLoadingCatalogue} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onAddMovie={addCarouselMovie} onRetry={retryCatalogue} />} />
+            <Route path="/" element={<DashboardPage movies={movies} visibleMovies={visibleMovies} watchlistCount={watchlistCount} watchedCount={watchedCount} isLoading={isLoadingCatalogue} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onAddMovie={addCarouselMovie} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} />} />
             <Route path="/discover" element={<DiscoverPage query={search} onQueryChange={setSearch} onAddMovie={addTMDBMovie} />} />
-            <Route path="/watchlist" element={<CollectionPage title="My watchlist" movies={visibleMovies.filter((movie) => movie.status === 'watchlist')} isLoading={isLoadingCatalogue} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onRetry={retryCatalogue} />} />
-            <Route path="/watched" element={<CollectionPage title="Watched" movies={visibleMovies.filter((movie) => movie.status === 'watched')} isLoading={isLoadingCatalogue} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onRetry={retryCatalogue} />} />
+            <Route path="/watchlist" element={<CollectionPage title="My watchlist" movies={visibleMovies.filter((movie) => movie.status === 'watchlist')} isLoading={isLoadingCatalogue} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} />} />
+            <Route path="/watched" element={<CollectionPage title="Watched" movies={visibleMovies.filter((movie) => movie.status === 'watched')} isLoading={isLoadingCatalogue} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} />} />
             <Route path="/movies/:movieId" element={<MovieDetailsPage movies={movies} isLoading={isLoadingCatalogue} error={catalogueError} onToggleWatched={toggleWatched} />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
@@ -159,6 +193,7 @@ function AppRoutes() {
         </div>
       </main>
       {notice && <div className="toast" role="status">✓ &nbsp;{notice}</div>}
+      {isMovieFormOpen && <MovieForm key={editingMovie?.id ?? 'new'} movie={editingMovie ?? undefined} onSave={saveMovie} onClose={() => { setIsMovieFormOpen(false); setEditingMovie(null) }} />}
     </div>
   )
 }
