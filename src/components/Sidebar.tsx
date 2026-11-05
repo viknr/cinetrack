@@ -1,6 +1,11 @@
 import { NavLink } from 'react-router-dom'
 
-type SidebarProps = { watchlistCount: number }
+type SidebarProps = {
+  watchlistCount: number
+  isSignedIn: boolean
+  displayName: string
+  onSignOut: () => void
+}
 
 const links = [
   { label: 'Dashboard', icon: '◫', to: '/' },
@@ -9,7 +14,7 @@ const links = [
   { label: 'Watched', icon: '✓', to: '/watched' },
 ]
 
-export function Sidebar({ watchlistCount }: SidebarProps) {
+export function Sidebar({ watchlistCount, isSignedIn, displayName, onSignOut }: SidebarProps) {
   return (
     <aside className="sidebar">
       <NavLink className="brand" to="/" aria-label="CineTrack home">
@@ -26,7 +31,8 @@ export function Sidebar({ watchlistCount }: SidebarProps) {
       </nav>
       <div className="sidebar-bottom">
         <div className="sidebar-note"><span className="note-spark">✦</span><p>Your next favourite<br />film is waiting.</p><NavLink className="sidebar-explore" to="/discover">Explore movies <span aria-hidden="true">↗</span></NavLink></div>
-        <button className="profile"><span className="avatar">A</span><span className="profile-copy"><strong>Alex Morgan</strong><small>Film enthusiast</small></span><span className="profile-more">···</span></button>
+        {isSignedIn ? <button className="profile" onClick={onSignOut} aria-label={`Sign out ${displayName}`}><span className="avatar">{displayName.charAt(0).toUpperCase()}</span><span className="profile-copy"><strong>{displayName}</strong><small>Sign out</small></span><span className="profile-more" aria-hidden="true">↗</span></button>
+          : <NavLink className="profile sidebar-signin" to="/signin"><span className="avatar">?</span><span className="profile-copy"><strong>Sign in</strong><small>Save your collection</small></span><span className="profile-more" aria-hidden="true">→</span></NavLink>}
       </div>
     </aside>
   )
