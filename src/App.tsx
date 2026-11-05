@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { HashRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { DiscoverPage } from './components/DiscoverPage'
 import { Sidebar } from './components/Sidebar'
-import { featuredMovie } from './data/movies'
 import { CollectionPage } from './pages/CollectionPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { MovieDetailsPage } from './pages/MovieDetailsPage'
@@ -75,13 +74,20 @@ function AppRoutes() {
     showNotice(movie.status === 'watchlist' ? `${movie.title} marked as watched` : `${movie.title} moved to your watchlist`)
   }
 
-  function addFeaturedMovie() {
-    if (movies.some((movie) => movie.title === featuredMovie.title)) {
-      showNotice(`${featuredMovie.title} is already in your collection`)
+  function addCarouselMovie(movie: Movie) {
+    const existing = movies.find((item) => item.tmdbId && movie.tmdbId ? item.tmdbId === movie.tmdbId : item.title === movie.title)
+    if (existing?.status === 'watchlist') {
+      showNotice(`${movie.title} is already in your watchlist`)
       return
     }
-    setMovies((current) => [...current, { id: Math.max(0, ...movies.map((movie) => movie.id)) + 1, title: featuredMovie.title, year: 2014, genre: 'Sci-fi', rating: '8.7', runtime: featuredMovie.runtime, poster: 'interstellar', tone: 'A glowing planet beneath a dark space sky', status: 'watchlist' }])
-    showNotice(`${featuredMovie.title} added to your watchlist`)
+    if (existing) {
+      setMovies((current) => current.map((item) => item.id === existing.id ? { ...item, status: 'watchlist' } : item))
+      showNotice(`${movie.title} moved to your watchlist`)
+      return
+    }
+    const nextId = Math.max(0, ...movies.map((item) => item.id)) + 1
+    setMovies((current) => [...current, { ...movie, id: nextId, status: 'watchlist' }])
+    showNotice(`${movie.title} added to your watchlist`)
   }
 
   function addTMDBMovie(movie: TMDBMovieDetails) {
@@ -141,7 +147,7 @@ function AppRoutes() {
           <section className="welcome-row"><div><p className="date-label">THURSDAY, NOVEMBER 5, 2026</p><h1>{activePage === 'Dashboard' ? <>Good evening, Alex <span>✦</span></> : activePage}</h1><p className="welcome-subtitle">{pageCopy[activePage]}</p></div>{!['Discover', 'Movie details', 'Page not found'].includes(activePage) && <button className="add-movie" onClick={() => navigateToPage('Discover')}><span>＋</span> Add a movie</button>}</section>
 
           <Routes>
-            <Route path="/" element={<DashboardPage movies={visibleMovies} watchlistCount={watchlistCount} watchedCount={watchedCount} isLoading={isLoadingCatalogue} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onAddFeatured={addFeaturedMovie} onRetry={retryCatalogue} />} />
+            <Route path="/" element={<DashboardPage movies={movies} visibleMovies={visibleMovies} watchlistCount={watchlistCount} watchedCount={watchedCount} isLoading={isLoadingCatalogue} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onAddMovie={addCarouselMovie} onRetry={retryCatalogue} />} />
             <Route path="/discover" element={<DiscoverPage query={search} onQueryChange={setSearch} onAddMovie={addTMDBMovie} />} />
             <Route path="/watchlist" element={<CollectionPage title="My watchlist" movies={visibleMovies.filter((movie) => movie.status === 'watchlist')} isLoading={isLoadingCatalogue} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onRetry={retryCatalogue} />} />
             <Route path="/watched" element={<CollectionPage title="Watched" movies={visibleMovies.filter((movie) => movie.status === 'watched')} isLoading={isLoadingCatalogue} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onRetry={retryCatalogue} />} />
