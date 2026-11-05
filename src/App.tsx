@@ -8,7 +8,8 @@ import { DashboardPage } from './pages/DashboardPage'
 import { MovieDetailsPage } from './pages/MovieDetailsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { SignInPage } from './pages/SignInPage'
-import { clearDemoSession, createDemoSession, readDemoSession, type DemoSession } from './services/demoAuth'
+import { SignUpPage } from './pages/SignUpPage'
+import { clearDemoSession, readDemoSession, registerAccount, signInWithCredentials, type DemoSession } from './services/demoAuth'
 import { fetchMovieCatalogue } from './services/movieData'
 import { tmdbImage } from './services/tmdb'
 import type { TMDBMovieDetails } from './services/tmdb'
@@ -28,11 +29,22 @@ function AppRoutes() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  function signIn(displayName: string) {
-    const nextSession = createDemoSession(displayName)
+  async function signIn(email: string, password: string) {
+    const nextSession = await signInWithCredentials(email, password)
+    if (!nextSession) return false
     setSession(nextSession)
     const returnPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/'
     navigate(returnPath, { replace: true })
+    return true
+  }
+
+  async function signUp(displayName: string, email: string, password: string) {
+    const result = await registerAccount(displayName, email, password)
+    if (result.error || !result.session) return result.error ?? 'We could not create the account.'
+    setSession(result.session)
+    const returnPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/'
+    navigate(returnPath, { replace: true })
+    return null
   }
 
   function signOut() {
@@ -186,6 +198,9 @@ function AppRoutes() {
 
   if (location.pathname === '/signin') {
     return <SignInPage onSignIn={signIn} />
+  }
+  if (location.pathname === '/signup') {
+    return <SignUpPage onSignUp={signUp} />
   }
 
   return (

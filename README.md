@@ -40,6 +40,6 @@ The starter catalogue contains at least ten movie records in `public/data/movies
 
 ## Simulated sign-in
 
-The sign-in screen asks only for a display name. It creates a clearly labelled demo session token in the browser's local storage; no password is collected or sent to a server. The dashboard, Discover, watchlist, watched list and movie details use a protected-route check and send signed-out visitors to sign in. Use the profile control at the bottom of the sidebar to sign out. This front-end flow demonstrates the coursework's authentication and route protection concepts; it is not real account security.
+The sign-in screen has a fictional demo account (`demo@cinetrack.local` / `FilmNight2026!`) and a sign-up link. New accounts are saved in this browser only, with a salted PBKDF2 password verifier rather than a plain-text password. Sign-in creates a demo session token in local storage. No account information is sent to a server. Do not reuse a real password; this is not a secure online account service. The dashboard, Discover, watchlist, watched list and movie details use a protected-route check and send signed-out visitors to sign in. Use the profile control at the bottom of the sidebar to sign out. This front-end flow demonstrates the coursework's authentication and route protection concepts.
 
 The movie collection is also saved in browser local storage so CRUD changes survive a page refresh on the same browser. The original JSON catalogue remains the first-visit starting data.
