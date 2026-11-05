@@ -45,6 +45,18 @@ export function getTMDBMovieDetails(movieId: number) {
   return tmdbRequest<TMDBMovieDetails>(`/movie/${movieId}?append_to_response=credits`)
 }
 
+export async function findTMDBMovieDetails(title: string, year: number) {
+  const results = await searchTMDBMovies(title)
+  if (results.length === 0) throw new Error('TMDB_MOVIE_NOT_FOUND')
+
+  const normaliseTitle = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, '')
+  const targetTitle = normaliseTitle(title)
+  const sameTitle = results.filter((result) => normaliseTitle(result.title) === targetTitle)
+  const yearMatch = (items: TMDBMovieResult[]) => items.find((result) => Number(result.release_date?.slice(0, 4)) === year)
+  const match = yearMatch(sameTitle) ?? sameTitle[0] ?? yearMatch(results) ?? results[0]
+  return getTMDBMovieDetails(match.id)
+}
+
 export function tmdbImage(path: string | null, size: 'w342' | 'w500' | 'w1280' = 'w500') {
   return path ? `https://image.tmdb.org/t/p/${size}${path}` : null
 }
