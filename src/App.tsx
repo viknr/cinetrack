@@ -36,7 +36,8 @@ function AppRoutes() {
   const removeCollectionMovie = useMovieStore((state) => state.deleteMovie)
   const setActiveUser = useMovieStore((state) => state.setActiveUser)
   const [catalogueRetry, setCatalogueRetry] = useState(0)
-  const [search, setSearch] = useState('')
+  const [collectionSearch, setCollectionSearch] = useState('')
+  const [discoverSearch, setDiscoverSearch] = useState('')
   const [notice, setNotice] = useState('')
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null)
   const [isMovieFormOpen, setIsMovieFormOpen] = useState(false)
@@ -94,9 +95,9 @@ function AppRoutes() {
     ? (ratedMovies.reduce((total, movie) => total + (movie.userRating ?? 0), 0) / ratedMovies.length).toFixed(1)
     : null
   const visibleMovies = useMemo(() => {
-    const query = search.trim().toLowerCase()
+    const query = collectionSearch.trim().toLowerCase()
     return currentMovies.filter((movie) => !query || `${movie.title} ${movie.genre}`.toLowerCase().includes(query))
-  }, [currentMovies, search])
+  }, [currentMovies, collectionSearch])
 
   useEffect(() => {
     let cancelled = false
@@ -257,7 +258,7 @@ function AppRoutes() {
       <main className="main-content">
         <header className="topbar">
           <div className="breadcrumb"><span>My space</span><span className="crumb-divider">/</span><strong>{activePage}</strong></div>
-          <label className="search-box"><span aria-hidden="true">⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={activePage === 'Discover' ? 'Search TMDB...' : 'Search my movies...'} aria-label={activePage === 'Discover' ? 'Search TMDB movies' : 'Search my movies'} /><kbd>⌘ K</kbd></label>
+          <label className="search-box"><span aria-hidden="true">⌕</span><input value={activePage === 'Discover' ? discoverSearch : collectionSearch} onChange={(event) => activePage === 'Discover' ? setDiscoverSearch(event.target.value) : setCollectionSearch(event.target.value)} placeholder={activePage === 'Discover' ? 'Search TMDB...' : 'Search my movies...'} aria-label={activePage === 'Discover' ? 'Search TMDB movies' : 'Search my movies'} /><kbd>⌘ K</kbd></label>
           <button className="notification-button" aria-label="Notifications">♧<i /></button>
         </header>
 
@@ -266,7 +267,7 @@ function AppRoutes() {
 
           <Routes>
             <Route path="/" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}>{isCurrentCollectionLoading ? <EmptyState role="status" icon="◌" title="Loading your collection…" /> : <DashboardPage movies={currentMovies} visibleMovies={visibleMovies} firstName={firstName} averageRating={averageRating} ratingCount={ratedMovies.length} watchlistCount={watchlistCount} watchedCount={watchedCount} isLoading={false} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onAddMovie={addCarouselMovie} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} onOpenRating={() => setIsRatingFlowOpen(true)} />}</ProtectedRoute>} />
-            <Route path="/discover" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}>{isCurrentCollectionLoading ? <EmptyState role="status" icon="◌" title="Loading your collection…" /> : <DiscoverPage query={search} onQueryChange={setSearch} />}</ProtectedRoute>} />
+            <Route path="/discover" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}>{isCurrentCollectionLoading ? <EmptyState role="status" icon="◌" title="Loading your collection…" /> : <DiscoverPage query={discoverSearch} onQueryChange={setDiscoverSearch} />}</ProtectedRoute>} />
             <Route path="/discover/movies/:tmdbId" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><TMDBMovieDetailsPage onAddMovie={addTMDBMovie} /></ProtectedRoute>} />
             <Route path="/watchlist" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><CollectionPage title="My watchlist" movies={visibleMovies.filter((movie) => movie.status === 'watchlist')} isLoading={isCurrentCollectionLoading} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} /></ProtectedRoute>} />
             <Route path="/watched" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><CollectionPage title="Watched" movies={visibleMovies.filter((movie) => movie.status === 'watched')} isLoading={isCurrentCollectionLoading} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} /></ProtectedRoute>} />
