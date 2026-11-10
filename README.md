@@ -36,6 +36,7 @@ The starter catalogue contains at least ten movie records in `public/data/movies
 - `/#/watchlist` — Movies to watch
 - `/#/watched` — Watched movies
 - `/#/movies/:movieId` — A movie's details
+- `/#/discover/movies/:tmdbId` — Details for a movie found through TMDB
 - Any other path displays the not-found page.
 
 ## Simulated sign-in

@@ -9,6 +9,7 @@ import { MovieRatingFlow } from './components/MovieRatingFlow'
 import { CollectionPage } from './pages/CollectionPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { MovieDetailsPage } from './pages/MovieDetailsPage'
+import { TMDBMovieDetailsPage } from './pages/TMDBMovieDetailsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { SignInPage } from './pages/SignInPage'
 import { SignUpPage } from './pages/SignUpPage'
@@ -80,7 +81,7 @@ function AppRoutes() {
     : location.pathname === '/discover' ? 'Discover'
       : location.pathname === '/watchlist' ? 'My watchlist'
         : location.pathname === '/watched' ? 'Watched'
-          : location.pathname.startsWith('/movies/') ? 'Movie details' : 'Page not found'
+          : location.pathname.startsWith('/movies/') || location.pathname.startsWith('/discover/movies/') ? 'Movie details' : 'Page not found'
 
   const collectionMatchesSession = activeUserId === signedInUserId
   const currentMovies = useMemo(() => collectionMatchesSession ? movies : [], [collectionMatchesSession, movies])
@@ -265,7 +266,8 @@ function AppRoutes() {
 
           <Routes>
             <Route path="/" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}>{isCurrentCollectionLoading ? <EmptyState role="status" icon="◌" title="Loading your collection…" /> : <DashboardPage movies={currentMovies} visibleMovies={visibleMovies} firstName={firstName} averageRating={averageRating} ratingCount={ratedMovies.length} watchlistCount={watchlistCount} watchedCount={watchedCount} isLoading={false} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onAddMovie={addCarouselMovie} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} onOpenRating={() => setIsRatingFlowOpen(true)} />}</ProtectedRoute>} />
-            <Route path="/discover" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}>{isCurrentCollectionLoading ? <EmptyState role="status" icon="◌" title="Loading your collection…" /> : <DiscoverPage query={search} onQueryChange={setSearch} onAddMovie={addTMDBMovie} />}</ProtectedRoute>} />
+            <Route path="/discover" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}>{isCurrentCollectionLoading ? <EmptyState role="status" icon="◌" title="Loading your collection…" /> : <DiscoverPage query={search} onQueryChange={setSearch} />}</ProtectedRoute>} />
+            <Route path="/discover/movies/:tmdbId" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><TMDBMovieDetailsPage onAddMovie={addTMDBMovie} /></ProtectedRoute>} />
             <Route path="/watchlist" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><CollectionPage title="My watchlist" movies={visibleMovies.filter((movie) => movie.status === 'watchlist')} isLoading={isCurrentCollectionLoading} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} /></ProtectedRoute>} />
             <Route path="/watched" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><CollectionPage title="Watched" movies={visibleMovies.filter((movie) => movie.status === 'watched')} isLoading={isCurrentCollectionLoading} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} /></ProtectedRoute>} />
             <Route path="/movies/:movieId" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><MovieDetailsPage movies={currentMovies} isLoading={isCurrentCollectionLoading} error={catalogueError} onToggleWatched={toggleWatched} /></ProtectedRoute>} />

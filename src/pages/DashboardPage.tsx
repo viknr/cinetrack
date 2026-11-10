@@ -61,6 +61,9 @@ export function DashboardPage({ movies, visibleMovies, firstName, averageRating,
   const [isPaused, setIsPaused] = useState(false)
   const currentIndex = activeIndex % slides.length
   const currentSlide = slides[currentIndex]
+  const currentMovieDetailsPath = currentSlide.movie.id === 0 && currentSlide.movie.tmdbId
+    ? `/discover/movies/${currentSlide.movie.tmdbId}`
+    : `/movies/${currentSlide.movie.id}`
 
   useEffect(() => {
     if (slides.length < 2 || isPaused) return
@@ -76,10 +79,10 @@ export function DashboardPage({ movies, visibleMovies, firstName, averageRating,
     <>
       <section className="feature-banner" aria-roledescription="carousel" aria-label="Featured movies">
         <div className="feature-art" aria-hidden="true"><div className="planet" /><div className="horizon" /></div>
-        <MoviePoster movie={currentSlide.movie} variant="feature" />
+        <Link className="feature-poster-link" to={currentMovieDetailsPath} aria-label={`View details for ${currentSlide.movie.title}`}><MoviePoster movie={currentSlide.movie} variant="feature" /></Link>
         <div className="feature-content">
           <div className="feature-copy" key={currentSlide.movie.tmdbId ?? currentSlide.movie.id}>
-            <p className="feature-eyebrow"><span>✦</span> {currentIndex === 0 ? featuredMovie.eyebrow : 'A pick from your collection'}</p><h2>{currentSlide.movie.title}</h2><p className="feature-description">{currentSlide.description}</p><div className="feature-meta"><span>{currentSlide.movie.year}</span><span>{currentSlide.movie.genre}</span><span>{currentSlide.movie.runtime}</span><RatingStars className="feature-rating" value={currentSlide.movie.rating} label={`${currentSlide.movie.title} TMDB rating`} /></div>
+            <p className="feature-eyebrow"><span>✦</span> {currentIndex === 0 ? featuredMovie.eyebrow : 'A pick from your collection'}</p><Link className="feature-title-link" to={currentMovieDetailsPath}><h2>{currentSlide.movie.title}</h2></Link><p className="feature-description">{currentSlide.description}</p><div className="feature-meta"><span>{currentSlide.movie.year}</span><span>{currentSlide.movie.genre}</span><span>{currentSlide.movie.runtime}</span><RatingStars className="feature-rating" value={currentSlide.movie.rating} label={`${currentSlide.movie.title} TMDB rating`} /></div>
           </div>
           <button className="feature-button" onClick={() => onAddMovie(currentSlide.movie)}>＋ Add to watchlist</button>
           <div className="feature-controls" aria-label="Featured movie controls">
