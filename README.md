@@ -21,7 +21,7 @@ npm run dev
 
 4. Restart the Vite dev server and open Discover to search for a movie.
 
-`.env.local` is ignored by Git. The Vite variable is included in browser code so the browser can call TMDB directly; treat it as a public demo key, do not use the separate Read Access Token here, and do not commit it. Do not include this key in a public GitHub Pages build. A deployed app should either use the JSON catalogue without TMDB or put TMDB requests behind a server-side proxy.
+`.env.local` is ignored by Git and is used for local development. For the GitHub Pages build, add a repository Actions secret named `TMDB_API_KEY` containing the same **API Key (v3 auth)**, then run **Actions → Deploy CineTrack to GitHub Pages**. The key is included in the public JavaScript bundle so the browser can call TMDB; anyone can inspect and reuse it. Use only the v3 application key, never the separate Read Access Token. TMDB documents this as application-level authentication and says its API is free for non-commercial use with attribution; commercial use requires a separate licence. The app displays the required TMDB credit below the search results.
 
 TMDB requires attribution for non-commercial use. CineTrack shows its logo and the required notice on the Discover page: “This product uses the TMDB API but is not endorsed or certified by TMDB.”
 
