@@ -41,9 +41,9 @@ The starter catalogue contains at least ten movie records in `public/data/movies
 
 ## Simulated sign-in
 
-The sign-in screen has a fictional demo account (`demo@cinetrack.local` / `FilmNight2026!`) and a sign-up link. New accounts are saved in this browser only, with a salted PBKDF2 password verifier rather than a plain-text password. Sign-in creates a demo session token in local storage. No account information is sent to a server. Do not reuse a real password; this is not a secure online account service. The dashboard, Discover, watchlist, watched list and movie details use a protected-route check and send signed-out visitors to sign in. Use the profile control at the bottom of the sidebar to sign out. This front-end flow demonstrates the coursework's authentication and route protection concepts.
+The sign-in screen links to account creation. New accounts start with an empty personal collection and are saved in the current browser only, with a salted PBKDF2 password verifier rather than a plain-text password. No account information is sent to a server. Do not reuse a real password; this is not a secure online account service. The dashboard, Discover, watchlist, watched list and movie details use a protected-route check and send signed-out visitors to sign in. Use the profile control at the bottom of the sidebar to sign out. This front-end flow demonstrates the coursework's authentication and route protection concepts. The current release clears older CineTrack account and collection data from each browser the first time that browser loads it.
 
-Each account's movie collection is saved separately in this browser's local storage so CRUD changes survive a refresh without appearing in another signed-in account. The original JSON catalogue is the first-visit starting data for each account. On the first sign-in after this update, the previous shared collection is moved to the active account.
+Each account's movie collection is saved separately in this browser's local storage so CRUD changes survive a refresh without appearing in another signed-in account. New accounts begin with an empty collection and can add films from Discover.
 
 ## State management
 

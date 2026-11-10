@@ -112,7 +112,7 @@ function AppRoutes() {
     setIsLoadingCatalogue(true)
     setCatalogueError('')
     fetchMovieCatalogue()
-      .then((catalogue) => {
+      .then(() => {
         if (cancelled) return
         const userCollectionKey = getCollectionStorageKey(signedInUserId)
         let savedMovies: Movie[] | null = null
@@ -137,7 +137,7 @@ function AppRoutes() {
         } catch {
           window.localStorage.removeItem(userCollectionKey)
         }
-        setMovies(savedMovies ?? catalogue)
+        setMovies(savedMovies ?? [])
       })
       .catch((error: unknown) => {
         if (!cancelled) setCatalogueError(error instanceof Error ? error.message : 'We could not load the movie catalogue.')

@@ -13,8 +13,6 @@ type StoredAccount = {
 
 const sessionStorageKey = 'cinetrack-demo-session'
 const accountsStorageKey = 'cinetrack-demo-accounts'
-const demoEmail = 'demo@cinetrack.local'
-const demoPassword = 'FilmNight2026!'
 const pbkdf2Iterations = 120_000
 
 function readAccounts(): StoredAccount[] {
@@ -58,8 +56,7 @@ export function readDemoSession(): DemoSession | null {
       && typeof session.displayName === 'string' && typeof session.token === 'string') {
       const storedUserId = 'userId' in session && typeof session.userId === 'string' ? session.userId : ''
       const matchingAccounts = readAccounts().filter((account) => account.displayName === session.displayName)
-      const userId = storedUserId || (matchingAccounts.length === 1 ? matchingAccounts[0].email
-        : session.displayName === 'Alex Morgan' ? demoEmail : `legacy:${session.token}`)
+      const userId = storedUserId || (matchingAccounts.length === 1 ? matchingAccounts[0].email : `legacy:${session.token}`)
       const upgradedSession = { displayName: session.displayName, userId, token: session.token }
       if (!storedUserId) window.localStorage.setItem(sessionStorageKey, JSON.stringify(upgradedSession))
       return upgradedSession
@@ -72,8 +69,6 @@ export function readDemoSession(): DemoSession | null {
 
 export async function signInWithCredentials(email: string, password: string): Promise<DemoSession | null> {
   const normalizedEmail = email.trim().toLowerCase()
-  if (normalizedEmail === demoEmail && password === demoPassword) return saveSession('Alex Morgan', demoEmail)
-
   const account = readAccounts().find((item) => item.email === normalizedEmail)
   if (!account) return null
   const saltBytes = Uint8Array.from(account.salt.match(/.{1,2}/g) ?? [], (byte) => Number.parseInt(byte, 16))
@@ -84,7 +79,7 @@ export async function signInWithCredentials(email: string, password: string): Pr
 
 export async function registerAccount(displayName: string, email: string, password: string): Promise<{ session?: DemoSession; error?: string }> {
   const normalizedEmail = email.trim().toLowerCase()
-  if (normalizedEmail === demoEmail || readAccounts().some((account) => account.email === normalizedEmail)) {
+  if (readAccounts().some((account) => account.email === normalizedEmail)) {
     return { error: 'An account with that email already exists. Try signing in instead.' }
   }
 
