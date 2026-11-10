@@ -61,3 +61,7 @@ npm test
 For watch mode while editing tests, run `npm run test:watch`. The suite uses Vitest, jsdom, React Testing Library and `user-event` to check behavior through the rendered interface. It currently has nine passing tests across five files, covering movie-form validation and saving, sign-up validation, protected-route access, personal rating progression, collection CRUD, and keeping account collections separate.
 
 To show each test name in the terminal when capturing test evidence, run `npm test -- --reporter=verbose`.
+
+## Reusable components
+
+CineTrack shares UI through reusable components: `MovieCard` appears on the dashboard and collection pages; `ProtectedRoute` wraps the app's protected routes; `EmptyState` presents loading, error and empty states across pages; `SectionHeading` is used for dashboard and collection sections; `MoviePoster` provides consistent posters in cards, details, the dashboard feature and the rating flow; and `RatingStars` displays movie scores and collects personal ratings.

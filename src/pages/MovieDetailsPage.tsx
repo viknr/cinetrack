@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { EmptyState } from '../components/EmptyState'
+import { MoviePoster } from '../components/MoviePoster'
+import { RatingStars } from '../components/RatingStars'
 import { findTMDBMovieDetails, getTMDBMovieDetails, tmdbImage } from '../services/tmdb'
 import type { TMDBMovieDetails } from '../services/tmdb'
 import type { Movie } from '../types/movie'
@@ -47,18 +50,16 @@ export function MovieDetailsPage({ movies, isLoading, error, onToggleWatched }: 
   const tmdbError = lookupError && lookupError.catalogueId === movie?.id ? lookupError.message : ''
   const isLookingUpTMDB = Boolean(movie && !movie.overview && !tmdbDetails && !tmdbError)
 
-  if (isLoading) return <div className="empty-state" role="status"><span>◌</span><h3>Loading movie details…</h3></div>
-  if (error) return <div className="empty-state" role="alert"><h3>Could not load your movies</h3><p>{error}</p><Link className="retry-button" to="/">Return to dashboard</Link></div>
-  if (!movie) return <div className="empty-state"><span>⌕</span><h3>We couldn’t find that movie</h3><p>It may have been removed from your collection.</p><Link className="retry-button" to="/watchlist">Back to watchlist</Link></div>
+  if (isLoading) return <EmptyState role="status" icon="◌" title="Loading movie details…" />
+  if (error) return <EmptyState role="alert" title="Could not load your movies" description={error} action={<Link className="retry-button" to="/">Return to dashboard</Link>} />
+  if (!movie) return <EmptyState icon="⌕" title="We couldn’t find that movie" description="It may have been removed from your collection." action={<Link className="retry-button" to="/watchlist">Back to watchlist</Link>} />
 
   return (
     <section className="movie-detail-route">
       <Link className="detail-back-link" to={movie.status === 'watched' ? '/watched' : '/watchlist'}>← Back to {movie.status === 'watched' ? 'watched movies' : 'watchlist'}</Link>
       <div className="route-detail-card">
-        <div className={`poster poster-${movie.poster} route-detail-poster ${movie.posterUrl || tmdbDetails?.poster_path ? 'poster-with-image' : ''}`} style={movie.posterUrl || tmdbImage(tmdbDetails?.poster_path ?? null) ? { backgroundImage: `linear-gradient(0deg,#0d0b13 1%,transparent 65%),url("${movie.posterUrl ?? tmdbImage(tmdbDetails?.poster_path ?? null)}")` } : undefined} role="img" aria-label={movie.tone}>
-          {!movie.posterUrl && !tmdbDetails?.poster_path && <span className="poster-title">{movie.title}</span>}
-        </div>
-        <div className="route-detail-copy"><p className="section-kicker">MOVIE DETAILS</p><h2>{tmdbDetails?.title ?? movie.title}</h2><p className="detail-meta">{tmdbDetails?.release_date?.slice(0, 4) || movie.year || 'Year unknown'} <span>·</span> {tmdbDetails?.runtime ? `${Math.floor(tmdbDetails.runtime / 60)}h ${tmdbDetails.runtime % 60}m` : movie.runtime} <span>·</span> <span className="feature-rating">★ {tmdbDetails?.vote_average.toFixed(1) ?? movie.rating}</span></p><p className="detail-genre">{tmdbDetails?.genres.map((genre) => genre.name).join(' · ') || movie.genre}</p>
+        <MoviePoster movie={movie} imageUrl={movie.posterUrl ?? tmdbImage(tmdbDetails?.poster_path ?? null)} className="route-detail-poster" />
+        <div className="route-detail-copy"><p className="section-kicker">MOVIE DETAILS</p><h2>{tmdbDetails?.title ?? movie.title}</h2><p className="detail-meta">{tmdbDetails?.release_date?.slice(0, 4) || movie.year || 'Year unknown'} <span>·</span> {tmdbDetails?.runtime ? `${Math.floor(tmdbDetails.runtime / 60)}h ${tmdbDetails.runtime % 60}m` : movie.runtime} <span>·</span> <RatingStars className="feature-rating" value={tmdbDetails?.vote_average.toFixed(1) ?? movie.rating} label={`${movie.title} TMDB rating`} /></p><p className="detail-genre">{tmdbDetails?.genres.map((genre) => genre.name).join(' · ') || movie.genre}</p>
           <p className="detail-overview">{tmdbDetails?.overview || movie.overview || (isLookingUpTMDB ? 'Loading full details from TMDB…' : tmdbError || 'No synopsis is available for this movie yet.')}</p>
           <p className="detail-people"><strong>Director</strong>{tmdbDetails?.credits.crew.find((person) => person.job === 'Director')?.name || movie.director || (isLookingUpTMDB ? 'Loading…' : tmdbError ? 'Unavailable' : 'Not listed')}</p>
           <p className="detail-people"><strong>Cast</strong>{tmdbDetails?.credits.cast.slice(0, 5).map((person) => person.name).join(', ') || movie.cast?.join(', ') || (isLookingUpTMDB ? 'Loading…' : tmdbError ? 'Unavailable' : 'Not listed')}</p>

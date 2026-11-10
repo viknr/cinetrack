@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { MoviePoster } from './MoviePoster'
+import { RatingStars } from './RatingStars'
 import type { Movie } from '../types/movie'
 
 type MovieRatingFlowProps = {
@@ -33,17 +35,12 @@ export function MovieRatingFlow({ movies, onRate, onClose }: MovieRatingFlowProp
         {currentMovie ? <>
           <p className="rating-progress">Movie {currentIndex + 1} of {movieIds.length}</p>
           <div className="rating-movie-summary">
-            {currentMovie.posterUrl && <img src={currentMovie.posterUrl} alt="" />}
+            {currentMovie.posterUrl && <MoviePoster movie={currentMovie} className="rating-poster" decorative showFallbackTitle={false} />}
             <div><h3>{currentMovie.title}</h3><p>{currentMovie.year} <span>·</span> {currentMovie.genre}</p></div>
           </div>
           <fieldset className="rating-picker">
             <legend>Choose a score out of 10</legend>
-            <div className="rating-stars" role="group" aria-label={`Rating for ${currentMovie.title}`}>
-              {Array.from({ length: 10 }, (_, index) => {
-                const value = index + 1
-                return <button key={value} type="button" className={value <= rating ? 'rating-star selected' : 'rating-star'} onClick={() => currentMovie && setRatings((current) => ({ ...current, [currentMovie.id]: value }))} aria-label={`${value} out of 10 stars`} aria-pressed={rating === value}>★</button>
-              })}
-            </div>
+            <RatingStars value={rating} label={`Rating for ${currentMovie.title}`} onChange={(value) => setRatings((current) => ({ ...current, [currentMovie.id]: value }))} />
             <p className="rating-current">{rating ? `${rating} out of 10` : 'Select a rating'}</p>
           </fieldset>
           <div className="movie-form-actions rating-actions"><button type="button" className="form-cancel" onClick={skipMovie}>Skip for now</button><button className="add-movie" type="button" onClick={saveAndContinue} disabled={rating < 1}>{currentIndex === movieIds.length - 1 ? 'Save rating' : 'Save & next'}</button></div>

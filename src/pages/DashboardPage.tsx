@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { EmptyState } from '../components/EmptyState'
 import { MovieCard } from '../components/MovieCard'
+import { MoviePoster } from '../components/MoviePoster'
+import { RatingStars } from '../components/RatingStars'
+import { SectionHeading } from '../components/SectionHeading'
 import { featuredMovie } from '../data/movies'
 import { tmdbImage } from '../services/tmdb'
 import type { Movie } from '../types/movie'
@@ -72,10 +76,10 @@ export function DashboardPage({ movies, visibleMovies, firstName, averageRating,
     <>
       <section className="feature-banner" aria-roledescription="carousel" aria-label="Featured movies">
         <div className="feature-art" aria-hidden="true"><div className="planet" /><div className="horizon" /></div>
-        {currentSlide.movie.posterUrl && <img key={currentSlide.movie.tmdbId ?? currentSlide.movie.id} className="feature-poster" src={currentSlide.movie.posterUrl} alt={`${currentSlide.movie.title} poster`} />}
+        <MoviePoster movie={currentSlide.movie} variant="feature" />
         <div className="feature-content">
           <div className="feature-copy" key={currentSlide.movie.tmdbId ?? currentSlide.movie.id}>
-            <p className="feature-eyebrow"><span>✦</span> {currentIndex === 0 ? featuredMovie.eyebrow : 'A pick from your collection'}</p><h2>{currentSlide.movie.title}</h2><p className="feature-description">{currentSlide.description}</p><div className="feature-meta"><span>{currentSlide.movie.year}</span><span>{currentSlide.movie.genre}</span><span>{currentSlide.movie.runtime}</span><span className="feature-rating">★ {currentSlide.movie.rating}</span></div>
+            <p className="feature-eyebrow"><span>✦</span> {currentIndex === 0 ? featuredMovie.eyebrow : 'A pick from your collection'}</p><h2>{currentSlide.movie.title}</h2><p className="feature-description">{currentSlide.description}</p><div className="feature-meta"><span>{currentSlide.movie.year}</span><span>{currentSlide.movie.genre}</span><span>{currentSlide.movie.runtime}</span><RatingStars className="feature-rating" value={currentSlide.movie.rating} label={`${currentSlide.movie.title} TMDB rating`} /></div>
           </div>
           <button className="feature-button" onClick={() => onAddMovie(currentSlide.movie)}>＋ Add to watchlist</button>
           <div className="feature-controls" aria-label="Featured movie controls">
@@ -94,11 +98,11 @@ export function DashboardPage({ movies, visibleMovies, firstName, averageRating,
       </section>
 
       <section className="collection-section">
-        <div className="section-heading"><div><p className="section-kicker">YOUR COLLECTION</p><h2>Picked for you</h2></div><Link className="view-all" to="/watchlist">Open your watchlist <span>↗</span></Link></div>
-        {isLoading ? <div className="empty-state" role="status"><span>◌</span><h3>Loading your movies…</h3></div>
-          : error ? <div className="empty-state" role="alert"><h3>Could not load your movies</h3><p>{error}</p><button className="retry-button" onClick={onRetry}>Try again</button></div>
+        <SectionHeading kicker="YOUR COLLECTION" title="Picked for you" action={<Link className="view-all" to="/watchlist">Open your watchlist <span>↗</span></Link>} />
+        {isLoading ? <EmptyState role="status" icon="◌" title="Loading your movies…" />
+          : error ? <EmptyState role="alert" title="Could not load your movies" description={error} action={<button className="retry-button" onClick={onRetry}>Try again</button>} />
             : visibleMovies.length > 0 ? <div className="movie-grid">{visibleMovies.slice(0, 6).map((movie) => <MovieCard key={movie.id} movie={movie} onToggleWatched={onToggleWatched} onToggleSaved={onToggleSaved} onEdit={onEdit} onDelete={onDelete} />)}</div>
-              : <div className="empty-state"><span>⌕</span><h3>No films found</h3></div>}
+              : <EmptyState icon="⌕" title="No films found" />}
       </section>
     </>
   )
