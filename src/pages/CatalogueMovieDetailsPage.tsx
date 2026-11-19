@@ -39,7 +39,7 @@ export function CatalogueMovieDetailsPage({ catalogue, collection, isLoading, er
           <button className="feature-button detail-add" onClick={() => onAddMovie(movie)} disabled={Boolean(isInCollection)}>{isInCollection ? '✓ Already in your collection' : '＋ Add to my collection'}</button>
         </div>
       </div>
-      <div className="tmdb-attribution"><a href="https://www.themoviedb.org/" target="_blank" rel="noreferrer"><img src="https://www.themoviedb.org/assets/2/v4/logos/primary-green.svg" alt="TMDB" /></a><span>This product uses the TMDB API but is not endorsed or certified by TMDB.</span></div>
+      <div className="tmdb-attribution"><span>Film information and poster artwork from <a href="https://www.themoviedb.org/" target="_blank" rel="noreferrer">TMDB</a>. This product is not endorsed or certified by TMDB.</span></div>
     </section>
   )
 }

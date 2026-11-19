@@ -10,13 +10,16 @@ import { CollectionPage } from './pages/CollectionPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { MovieDetailsPage } from './pages/MovieDetailsPage'
 import { CatalogueMovieDetailsPage } from './pages/CatalogueMovieDetailsPage'
+import { CatalogueSeriesDetailsPage } from './pages/CatalogueSeriesDetailsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { SignInPage } from './pages/SignInPage'
 import { SignUpPage } from './pages/SignUpPage'
 import { clearDemoSession, readDemoSession, registerAccount, signInWithCredentials, type DemoSession } from './services/demoAuth'
 import { fetchMovieCatalogue } from './services/movieData'
+import { fetchSeriesCatalogue } from './services/seriesData'
 import { getCollectionStorageKey, useMovieStore } from './stores/movieStore'
 import type { Movie } from './types/movie'
+import type { CatalogueSeries } from './types/series'
 import './App.css'
 
 function AppRoutes() {
@@ -35,6 +38,7 @@ function AppRoutes() {
   const setActiveUser = useMovieStore((state) => state.setActiveUser)
   const [catalogueRetry, setCatalogueRetry] = useState(0)
   const [catalogueMovies, setCatalogueMovies] = useState<Movie[]>([])
+  const [catalogueSeries, setCatalogueSeries] = useState<CatalogueSeries[]>([])
   const [collectionSearch, setCollectionSearch] = useState('')
   const [discoverSearch, setDiscoverSearch] = useState('')
   const [notice, setNotice] = useState('')
@@ -81,7 +85,8 @@ function AppRoutes() {
     : location.pathname === '/discover' ? 'Discover'
       : location.pathname === '/watchlist' ? 'My watchlist'
         : location.pathname === '/watched' ? 'Watched'
-          : location.pathname.startsWith('/movies/') || location.pathname.startsWith('/discover/movies/') ? 'Movie details' : 'Page not found'
+          : location.pathname.startsWith('/discover/series/') ? 'Series details'
+            : location.pathname.startsWith('/movies/') || location.pathname.startsWith('/discover/movies/') ? 'Movie details' : 'Page not found'
 
   const collectionMatchesSession = activeUserId === signedInUserId
   const currentMovies = useMemo(() => collectionMatchesSession ? movies : [], [collectionMatchesSession, movies])
@@ -110,8 +115,8 @@ function AppRoutes() {
     setActiveUser(signedInUserId)
     setIsLoadingCatalogue(true)
     setCatalogueError('')
-    fetchMovieCatalogue()
-      .then((catalogue) => {
+    Promise.all([fetchMovieCatalogue(), fetchSeriesCatalogue()])
+      .then(([catalogue, series]) => {
         if (cancelled) return
         const userCollectionKey = getCollectionStorageKey(signedInUserId)
         let savedMovies: Movie[] | null = null
@@ -137,6 +142,7 @@ function AppRoutes() {
           window.localStorage.removeItem(userCollectionKey)
         }
         setCatalogueMovies(catalogue)
+        setCatalogueSeries(series)
         setMovies(savedMovies ?? [])
       })
       .catch((error: unknown) => {
@@ -232,6 +238,7 @@ function AppRoutes() {
     'My watchlist': 'All the films you can’t wait to watch.',
     Watched: 'Your personal collection of cinema memories.',
     'Movie details': 'A closer look at this film.',
+    'Series details': 'Explore every season and episode.',
     'Page not found': 'Let’s get you back to the movies.',
   }
 
@@ -253,12 +260,13 @@ function AppRoutes() {
         </header>
 
         <div className="page-content">
-          <section className="welcome-row"><div><p className="date-label">THURSDAY, NOVEMBER 5, 2026</p><h1>{activePage === 'Dashboard' ? <>Good evening, {firstName} <span>✦</span></> : activePage}</h1><p className="welcome-subtitle">{pageCopy[activePage]}</p></div>{!['Discover', 'Movie details', 'Page not found'].includes(activePage) && <button className="add-movie" disabled={isCurrentCollectionLoading} onClick={() => { setEditingMovie(null); setIsMovieFormOpen(true) }}><span>＋</span> Add a movie</button>}</section>
+          <section className="welcome-row"><div><p className="date-label">THURSDAY, NOVEMBER 5, 2026</p><h1>{activePage === 'Dashboard' ? <>Good evening, {firstName} <span>✦</span></> : activePage}</h1><p className="welcome-subtitle">{pageCopy[activePage]}</p></div>{!['Discover', 'Movie details', 'Series details', 'Page not found'].includes(activePage) && <button className="add-movie" disabled={isCurrentCollectionLoading} onClick={() => { setEditingMovie(null); setIsMovieFormOpen(true) }}><span>＋</span> Add a movie</button>}</section>
 
           <Routes>
             <Route path="/" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}>{isCurrentCollectionLoading ? <EmptyState role="status" icon="◌" title="Loading your collection…" /> : <DashboardPage movies={currentMovies} catalogue={catalogueMovies} visibleMovies={visibleMovies} firstName={firstName} averageRating={averageRating} ratingCount={ratedMovies.length} watchlistCount={watchlistCount} watchedCount={watchedCount} isLoading={false} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onAddMovie={addCarouselMovie} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} onOpenRating={() => setIsRatingFlowOpen(true)} />}</ProtectedRoute>} />
-            <Route path="/discover" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}>{isCurrentCollectionLoading ? <EmptyState role="status" icon="◌" title="Loading your collection…" /> : <DiscoverPage catalogue={catalogueMovies} query={discoverSearch} onQueryChange={setDiscoverSearch} />}</ProtectedRoute>} />
+            <Route path="/discover" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}>{isCurrentCollectionLoading ? <EmptyState role="status" icon="◌" title="Loading your collection…" /> : <DiscoverPage catalogue={catalogueMovies} series={catalogueSeries} query={discoverSearch} onQueryChange={setDiscoverSearch} />}</ProtectedRoute>} />
             <Route path="/discover/movies/:catalogueMovieId" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><CatalogueMovieDetailsPage catalogue={catalogueMovies} collection={currentMovies} isLoading={isCurrentCollectionLoading} error={catalogueError} onAddMovie={addCatalogueMovie} /></ProtectedRoute>} />
+            <Route path="/discover/series/:seriesId" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><CatalogueSeriesDetailsPage catalogue={catalogueSeries} isLoading={isCurrentCollectionLoading} error={catalogueError} /></ProtectedRoute>} />
             <Route path="/watchlist" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><CollectionPage title="My watchlist" movies={visibleMovies.filter((movie) => movie.status === 'watchlist')} isLoading={isCurrentCollectionLoading} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} /></ProtectedRoute>} />
             <Route path="/watched" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><CollectionPage title="Watched" movies={visibleMovies.filter((movie) => movie.status === 'watched')} isLoading={isCurrentCollectionLoading} error={catalogueError} onToggleWatched={toggleWatched} onToggleSaved={toggleSaved} onRetry={retryCatalogue} onEdit={editMovie} onDelete={deleteMovie} /></ProtectedRoute>} />
             <Route path="/movies/:movieId" element={<ProtectedRoute isAuthenticated={Boolean(session?.token)}><MovieDetailsPage movies={currentMovies} isLoading={isCurrentCollectionLoading} error={catalogueError} onToggleWatched={toggleWatched} /></ProtectedRoute>} />

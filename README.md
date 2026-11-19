@@ -1,6 +1,6 @@
 # CineTrack
 
-CineTrack is a React + TypeScript movie collection app built with Vite and React Router. Navigation uses hash-based URLs so routes work on GitHub Pages. The Discover page searches the local catalogue in `public/data/movies.json`, including posters and movie details, without needing a runtime API key.
+CineTrack is a React + TypeScript film and TV collection app built with Vite and React Router. Navigation uses hash-based URLs so routes work on GitHub Pages. Discover reads its local film and series catalogues from `public/data/movies.json` and `public/data/series.json`, without needing runtime API keys.
 
 ## Run CineTrack
 
@@ -11,22 +11,21 @@ npm run dev
 
 ## Movie catalogue
 
-`public/data/movies.json` is the editable source for the Discover catalogue. Add another movie object to include a title, or remove an object to take it out; the app displays every valid record, so there is no fixed ten-movie limit. Each record can include an id, TMDB id, title, year, genre, rating, runtime, poster path, overview, director, cast, poster style, alt text and a default status. The app reads the file using `fetch()` through `fetchMovieCatalogue()` in `src/services/movieData.ts`.
+`public/data/movies.json` is the editable film catalogue. Add or remove a movie object to change the list; there is no fixed item limit. Entries include the title, year, genre, rating, runtime, poster, synopsis, director and cast. The app reads this file through `fetchMovieCatalogue()` in `src/services/movieData.ts`.
 
-The posters and movie information in the sample catalogue are from TMDB. CineTrack displays TMDB's logo and required notice on the Discover and movie detail pages. It does not call the TMDB API at runtime or include a TMDB API key in the site bundle.
+`public/data/series.json` is the editable TV catalogue. Each series includes an overview, poster, cast and seasons; every season contains its episode titles, air dates and descriptions. Season lists are collapsed by default and can be opened on a series detail page. TVmaze data is licensed under CC BY-SA 4.0; the app links to each TVmaze series page and the licence.
 
-## Movie catalogue data
-
-The starter catalogue contains at least ten movie records in `public/data/movies.json`. The app reads the file through `fetchMovieCatalogue()` in `src/services/movieData.ts`, using the configured Vite base path so it can also be loaded from a GitHub Pages project URL. Each record includes an id, title, year, genre, rating, runtime, poster style, descriptive alt text and watch status.
+Film details and poster artwork are from TMDB. CineTrack credits TMDB and states that it is not endorsed or certified by TMDB. Movie and TV metadata are stored locally; the site does not call either data service at runtime or include a TMDB API key in the site bundle. Images remain hosted by TMDB and TVmaze.
 
 ## Routes
 
 - `/#/` — Dashboard
-- `/#/discover` — Search the local movie catalogue
+- `/#/discover` — Search the local film and TV catalogues
 - `/#/watchlist` — Movies to watch
 - `/#/watched` — Watched movies
 - `/#/movies/:movieId` — A movie's details
 - `/#/discover/movies/:catalogueMovieId` — Details for a movie in the local catalogue
+- `/#/discover/series/:seriesId` — Series details and expandable season-by-season episode descriptions
 - Any other path displays the not-found page.
 
 ## Simulated sign-in
