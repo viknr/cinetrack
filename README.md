@@ -1,6 +1,6 @@
 # CineTrack
 
-CineTrack is a React + TypeScript movie collection app built with Vite and React Router. Navigation uses hash-based URLs so routes work on GitHub Pages. The collection is loaded from `public/data/movies.json`; Discover can also search The Movie Database (TMDB) for real movie posters and details.
+CineTrack is a React + TypeScript movie collection app built with Vite and React Router. Navigation uses hash-based URLs so routes work on GitHub Pages. The Discover page searches the local catalogue in `public/data/movies.json`, including posters and movie details, without needing a runtime API key.
 
 ## Run CineTrack
 
@@ -9,21 +9,11 @@ npm install
 npm run dev
 ```
 
-## Connect TMDB search
+## Movie catalogue
 
-1. Create a TMDB account and request an API key from the API section of your account settings. TMDB's developer API registration requires accepting its terms.
-2. In the project root, create a file named `.env.local`.
-3. Add your TMDB **API Key (v3 auth)** to that file:
+`public/data/movies.json` is the editable source for the Discover catalogue. Add another movie object to include a title, or remove an object to take it out; the app displays every valid record, so there is no fixed ten-movie limit. Each record can include an id, TMDB id, title, year, genre, rating, runtime, poster path, overview, director, cast, poster style, alt text and a default status. The app reads the file using `fetch()` through `fetchMovieCatalogue()` in `src/services/movieData.ts`.
 
-   ```text
-   VITE_TMDB_API_KEY=your_key_here
-   ```
-
-4. Restart the Vite dev server and open Discover to search for a movie.
-
-`.env.local` is ignored by Git and is used for local development. For the GitHub Pages build, add a repository Actions secret named `TMDB_API_KEY` containing the same **API Key (v3 auth)**, then run **Actions → Deploy CineTrack to GitHub Pages**. The key is included in the public JavaScript bundle so the browser can call TMDB; anyone can inspect and reuse it. Use only the v3 application key, never the separate Read Access Token. TMDB documents this as application-level authentication and says its API is free for non-commercial use with attribution; commercial use requires a separate licence. The app displays the required TMDB credit below the search results.
-
-TMDB requires attribution for non-commercial use. CineTrack shows its logo and the required notice on the Discover page: “This product uses the TMDB API but is not endorsed or certified by TMDB.”
+The posters and movie information in the sample catalogue are from TMDB. CineTrack displays TMDB's logo and required notice on the Discover and movie detail pages. It does not call the TMDB API at runtime or include a TMDB API key in the site bundle.
 
 ## Movie catalogue data
 
@@ -32,11 +22,11 @@ The starter catalogue contains at least ten movie records in `public/data/movies
 ## Routes
 
 - `/#/` — Dashboard
-- `/#/discover` — Search TMDB
+- `/#/discover` — Search the local movie catalogue
 - `/#/watchlist` — Movies to watch
 - `/#/watched` — Watched movies
 - `/#/movies/:movieId` — A movie's details
-- `/#/discover/movies/:tmdbId` — Details for a movie found through TMDB
+- `/#/discover/movies/:catalogueMovieId` — Details for a movie in the local catalogue
 - Any other path displays the not-found page.
 
 ## Simulated sign-in

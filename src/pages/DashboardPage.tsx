@@ -5,12 +5,11 @@ import { MovieCard } from '../components/MovieCard'
 import { MoviePoster } from '../components/MoviePoster'
 import { RatingStars } from '../components/RatingStars'
 import { SectionHeading } from '../components/SectionHeading'
-import { featuredMovie } from '../data/movies'
-import { tmdbImage } from '../services/tmdb'
 import type { Movie } from '../types/movie'
 
 type DashboardPageProps = {
   movies: Movie[]
+  catalogue: Movie[]
   visibleMovies: Movie[]
   firstName: string
   averageRating: string | null
@@ -28,42 +27,40 @@ type DashboardPageProps = {
   onOpenRating: () => void
 }
 
-type FeatureSlide = { movie: Movie; description: string }
+type FeatureSlide = { movie: Movie; description: string; detailsPath: string; isCatalogue: boolean }
 
-function createFeaturedSlides(movies: Movie[]): FeatureSlide[] {
-  const interstellar: Movie = {
-    id: 0,
-    tmdbId: featuredMovie.tmdbId,
-    posterPath: featuredMovie.posterPath,
-    posterUrl: tmdbImage(featuredMovie.posterPath) ?? undefined,
-    title: featuredMovie.title,
-    year: Number(featuredMovie.year),
-    genre: 'Sci-fi',
-    rating: featuredMovie.rating,
-    runtime: featuredMovie.runtime,
-    poster: 'interstellar',
-    tone: 'Poster for Interstellar',
-    overview: featuredMovie.description,
-    status: 'watchlist',
-  }
+function createFeaturedSlides(movies: Movie[], catalogue: Movie[]): FeatureSlide[] {
+  const slides = catalogue.map((movie) => ({
+    movie,
+    description: movie.overview || `${movie.genre} pick from your catalogue.`,
+    detailsPath: `/discover/movies/${movie.id}`,
+    isCatalogue: true,
+  }))
+  if (slides.length) return slides
 
-  return [
-    { movie: interstellar, description: featuredMovie.description },
-    ...movies
-      .filter((movie) => movie.tmdbId !== interstellar.tmdbId && movie.title !== interstellar.title)
-      .map((movie) => ({ movie, description: movie.overview || `${movie.genre} pick from your collection.` })),
-  ]
+  const savedMovies = movies.map((movie) => ({
+    movie,
+    description: movie.overview || `${movie.genre} pick from your collection.`,
+    detailsPath: `/movies/${movie.id}`,
+    isCatalogue: false,
+  }))
+  if (savedMovies.length) return savedMovies
+
+  return [{
+    movie: { id: 0, title: 'Your next favourite is waiting', year: 0, genre: 'Discover', rating: '', runtime: '', poster: 'empty', tone: 'Discover your next favourite movie', status: 'watchlist' },
+    description: 'Browse the catalogue and find a film for your next movie night.',
+    detailsPath: '/discover',
+    isCatalogue: false,
+  }]
 }
 
-export function DashboardPage({ movies, visibleMovies, firstName, averageRating, ratingCount, watchlistCount, watchedCount, isLoading, error, onToggleWatched, onToggleSaved, onAddMovie, onRetry, onEdit, onDelete, onOpenRating }: DashboardPageProps) {
-  const slides = createFeaturedSlides(movies)
+export function DashboardPage({ movies, catalogue, visibleMovies, firstName, averageRating, ratingCount, watchlistCount, watchedCount, isLoading, error, onToggleWatched, onToggleSaved, onAddMovie, onRetry, onEdit, onDelete, onOpenRating }: DashboardPageProps) {
+  const slides = createFeaturedSlides(movies, catalogue)
   const [activeIndex, setActiveIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const currentIndex = activeIndex % slides.length
   const currentSlide = slides[currentIndex]
-  const currentMovieDetailsPath = currentSlide.movie.id === 0 && currentSlide.movie.tmdbId
-    ? `/discover/movies/${currentSlide.movie.tmdbId}`
-    : `/movies/${currentSlide.movie.id}`
+  const currentMovieDetailsPath = currentSlide.detailsPath
 
   useEffect(() => {
     if (slides.length < 2 || isPaused) return
@@ -82,9 +79,9 @@ export function DashboardPage({ movies, visibleMovies, firstName, averageRating,
         <Link className="feature-poster-link" to={currentMovieDetailsPath} aria-label={`View details for ${currentSlide.movie.title}`}><MoviePoster movie={currentSlide.movie} variant="feature" /></Link>
         <div className="feature-content">
           <div className="feature-copy" key={currentSlide.movie.tmdbId ?? currentSlide.movie.id}>
-            <p className="feature-eyebrow"><span>✦</span> {currentIndex === 0 ? featuredMovie.eyebrow : 'A pick from your collection'}</p><Link className="feature-title-link" to={currentMovieDetailsPath}><h2>{currentSlide.movie.title}</h2></Link><p className="feature-description">{currentSlide.description}</p><div className="feature-meta"><span>{currentSlide.movie.year}</span><span>{currentSlide.movie.genre}</span><span>{currentSlide.movie.runtime}</span><RatingStars className="feature-rating" value={currentSlide.movie.rating} label={`${currentSlide.movie.title} TMDB rating`} /></div>
+            <p className="feature-eyebrow"><span>✦</span> {currentSlide.isCatalogue ? 'FROM YOUR CATALOGUE' : 'YOUR NEXT MOVIE NIGHT'}</p><Link className="feature-title-link" to={currentMovieDetailsPath}><h2>{currentSlide.movie.title}</h2></Link><p className="feature-description">{currentSlide.description}</p><div className="feature-meta"><span>{currentSlide.movie.year || 'Explore'}</span><span>{currentSlide.movie.genre}</span><span>{currentSlide.movie.runtime}</span>{currentSlide.movie.rating && <RatingStars className="feature-rating" value={currentSlide.movie.rating} label={`${currentSlide.movie.title} movie rating`} />}</div>
           </div>
-          <button className="feature-button" onClick={() => onAddMovie(currentSlide.movie)}>＋ Add to watchlist</button>
+          {currentSlide.isCatalogue ? <button className="feature-button" onClick={() => onAddMovie(currentSlide.movie)}>＋ Add to watchlist</button> : <Link className="feature-button" to="/discover">Explore movies</Link>}
           <div className="feature-controls" aria-label="Featured movie controls">
             <button onClick={() => moveSlide(-1)} aria-label="Previous movie">‹</button>
             <span aria-live="off">{currentIndex + 1} / {slides.length}</span>

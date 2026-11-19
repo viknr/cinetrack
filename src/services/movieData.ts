@@ -1,5 +1,4 @@
 import type { Movie } from '../types/movie'
-import { tmdbImage } from './tmdb'
 
 export async function fetchMovieCatalogue(): Promise<Movie[]> {
   const response = await fetch(`${import.meta.env.BASE_URL}data/movies.json`)
@@ -14,6 +13,6 @@ export async function fetchMovieCatalogue(): Promise<Movie[]> {
 
   return movies.map((movie) => ({
     ...movie,
-    posterUrl: movie.posterUrl ?? tmdbImage(movie.posterPath ?? null) ?? undefined,
+    posterUrl: movie.posterUrl ?? (movie.posterPath ? `https://image.tmdb.org/t/p/w500${movie.posterPath}` : undefined),
   }))
 }
